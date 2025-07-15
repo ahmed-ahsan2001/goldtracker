@@ -86,7 +86,7 @@ Preferred communication style: Simple, everyday language.
   - `corsproxy.io` (fallback)
 - **Data Sources**: 
   - gold.pk website for Pakistani gold prices
-  - API Ninjas for international gold prices
+  - Kitco.com for international gold prices (specific H3 tag selector)
 - **Google Fonts**: Inter font family for typography
 - **Font Awesome**: Icons for UI elements
 - **React Router**: Client-side routing for navigation
@@ -129,9 +129,11 @@ Preferred communication style: Simple, everyday language.
 - **✅ Multi-Page Architecture**: Added routing with Home, International, About, Contact, Privacy pages
 - **✅ Enhanced Price Display**: Added 1 gram and 1 tola calculations alongside 10 grams
 - **✅ Dark Theme**: Implemented professional dark color scheme with gold accents
-- **✅ International Prices**: Added support for global gold prices via API Ninjas
+- **✅ International Prices**: Updated to fetch from Kitco.com using specific HTML selector
 - **✅ Responsive Navigation**: Sticky navigation bar with active state indicators
 - **✅ Unit Conversions**: Automatic calculations between grams, tolas, and ounces
+- **✅ Unified Scraper**: Created GoldPriceScraper class for both local and international prices
+- **✅ Kitco Integration**: Added support for scraping Kitco.com H3 tag with specific class
 
 ### Future Enhancements
 - **API Key Integration**: Complete setup for international gold price API

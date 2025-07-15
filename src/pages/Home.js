@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import GoldPriceScraper from '../utils/goldPriceScraper';
 import './Home.css';
 
 const Home = () => {
@@ -10,221 +11,20 @@ const Home = () => {
   const [countdown, setCountdown] = useState(0);
   const [spinning, setSpinning] = useState(false);
 
-  // CORS proxy URLs (fallback options)
-  const proxies = [
-    'https://api.allorigins.win/get?url=',
-    'https://corsproxy.io/?',
-    'https://cors-anywhere.herokuapp.com/'
-  ];
-
-  const [currentProxyIndex, setCurrentProxyIndex] = useState(0);
-  const targetUrl = 'https://gold.pk/';
+  const scraper = new GoldPriceScraper();
   const refreshIntervalMs = 300000; // 5 minutes
 
   // Conversion constants
   const GRAMS_PER_TOLA = 11.6638;
 
-  // Fetch with timeout
-  const fetchWithTimeout = useCallback((url, timeout) => {
-    return new Promise((resolve, reject) => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-        reject(new Error('Request timeout'));
-      }, timeout);
-
-      fetch(url, { signal: controller.signal })
-        .then(response => {
-          clearTimeout(timeoutId);
-          resolve(response);
-        })
-        .catch(error => {
-          clearTimeout(timeoutId);
-          reject(error);
-        });
-    });
-  }, []);
-
-  // Extract price from text
-  const extractPriceFromText = useCallback((text) => {
-    // Remove currency symbols and extract numeric value
-    const cleanText = text.replace(/[^\d,\.]/g, '');
-    const numericValue = parseFloat(cleanText.replace(/,/g, ''));
-    return isNaN(numericValue) ? null : numericValue;
-  }, []);
-
-  // Parse gold price from HTML
-  const parseGoldPrice = useCallback((html) => {
-    try {
-      // Create a DOM parser to parse the HTML
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-
-      console.log('Attempting to parse HTML, length:', html.length);
-      
-      // Check if goldratehome class exists
-      const goldRateElements = doc.querySelectorAll('.goldratehome');
-      console.log('Found goldratehome elements:', goldRateElements.length);
-      
-      if (goldRateElements.length > 0) {
-        goldRateElements.forEach((el, index) => {
-          console.log(`goldratehome element ${index}:`, el.textContent);
-        });
-      }
-
-      // Multiple strategies to find the gold price
-      const strategies = [
-        // Strategy 1: Look for the specific goldratehome class from gold.pk
-        () => {
-          const goldRateElement = doc.querySelector('.goldratehome');
-          if (goldRateElement) {
-            const price = extractPriceFromText(goldRateElement.textContent);
-            if (price && price > 50000 && price < 500000) {
-              console.log('Found price using goldratehome class:', price);
-              return price;
-            }
-          }
-          return null;
-        },
-
-        // Strategy 2: Look for other common gold price selectors
-        () => {
-          const selectors = [
-            'p.goldratehome',
-            '[data-gold-price]',
-            '.gold-price',
-            '#gold-price',
-            '.price-value',
-            '.current-price'
-          ];
-
-          for (const selector of selectors) {
-            const element = doc.querySelector(selector);
-            if (element) {
-              const price = extractPriceFromText(element.textContent);
-              if (price && price > 50000 && price < 500000) {
-                console.log('Found price using selector:', selector, price);
-                return price;
-              }
-            }
-          }
-          return null;
-        },
-
-        // Strategy 3: Look for table rows with gold price data
-        () => {
-          const rows = doc.querySelectorAll('tr');
-          for (const row of rows) {
-            const cells = row.querySelectorAll('td, th');
-            let hasGoldReference = false;
-            let priceValue = null;
-            
-            for (const cell of cells) {
-              const text = cell.textContent.trim();
-              // Check if this row contains gold reference
-              if (text.match(/10\s*(gram|g|Gram)/i) || text.match(/gold/i)) {
-                hasGoldReference = true;
-              }
-              // Check if this cell contains price
-              if (text.match(/\d{1,3}(?:[,\.]?\d{3})*\s*(RS|PKR|₹)/i)) {
-                const price = extractPriceFromText(text);
-                if (price && price > 50000 && price < 500000) {
-                  priceValue = price;
-                }
-              }
-            }
-            
-            if (hasGoldReference && priceValue) {
-              return priceValue;
-            }
-          }
-          return null;
-        }
-      ];
-
-      // Try each strategy
-      for (const strategy of strategies) {
-        const price = strategy();
-        if (price && price > 0) {
-          console.log('Successfully parsed price:', price);
-          return price;
-        }
-      }
-
-      console.error('Failed to parse gold price from HTML');
-      return null;
-
-    } catch (error) {
-      console.error('Error parsing HTML:', error);
-      return null;
-    }
-  }, [extractPriceFromText]);
-
-  // Fetch with proxy
-  const fetchWithProxy = useCallback(async () => {
-    let lastError = null;
-
-    // Try each proxy
-    for (let i = 0; i < proxies.length; i++) {
-      const proxyIndex = (currentProxyIndex + i) % proxies.length;
-      const proxy = proxies[proxyIndex];
-
-      try {
-        console.log(`Attempting to fetch with proxy ${proxyIndex + 1}:`, proxy);
-        const response = await fetchWithTimeout(proxy + encodeURIComponent(targetUrl), 15000);
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        let html = '';
-        const contentType = response.headers.get('content-type');
-        
-        if (contentType && contentType.includes('application/json')) {
-          const data = await response.json();
-          // Handle different proxy response formats
-          if (data.contents) {
-            html = data.contents; // allorigins format
-          } else if (data.data) {
-            html = data.data; // alternative format
-          } else if (typeof data === 'string') {
-            html = data; // string response
-          } else {
-            throw new Error('Unexpected JSON proxy response format');
-          }
-        } else {
-          // Direct HTML response (cors-anywhere, etc.)
-          html = await response.text();
-        }
-
-        if (!html || html.length < 100) {
-          throw new Error('Received empty or invalid response');
-        }
-
-        // Update current proxy index for next request
-        setCurrentProxyIndex(proxyIndex);
-        return html;
-
-      } catch (error) {
-        console.error(`Proxy ${proxyIndex + 1} failed:`, error.message);
-        lastError = error;
-        continue;
-      }
-    }
-
-    // If all proxies failed, throw the last error
-    throw new Error(`All proxies failed. Last error: ${lastError?.message || 'Unknown error'}`);
-  }, [currentProxyIndex, fetchWithTimeout, targetUrl]);
-
-  // Fetch gold price
+  // Fetch Pakistan gold price
   const fetchGoldPrice = useCallback(async () => {
     setLoading(true);
     setError(null);
     setIsOnline(false);
 
     try {
-      const html = await fetchWithProxy();
-      const price = parseGoldPrice(html);
+      const price = await scraper.fetchPakistanGoldPrice();
 
       if (price) {
         setGoldPrice(price);
@@ -240,7 +40,7 @@ const Home = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchWithProxy, parseGoldPrice]);
+  }, [scraper]);
 
   // Manual refresh
   const handleManualRefresh = useCallback(() => {
@@ -269,14 +69,14 @@ const Home = () => {
     }).format(price);
   }, []);
 
-  // Calculate different unit prices
+  // Calculate prices for different units
   const calculatePrices = useCallback((per10GramPrice) => {
     if (!per10GramPrice) return null;
     
     return {
       per10Gram: per10GramPrice,
-      per1Gram: per10GramPrice / 10,
-      per1Tola: (per10GramPrice / 10) * GRAMS_PER_TOLA
+      perGram: per10GramPrice / 10,
+      perTola: (per10GramPrice / 10) * GRAMS_PER_TOLA
     };
   }, []);
 
@@ -338,14 +138,14 @@ const Home = () => {
     <div className="home-container">
       <header className="home-header">
         <h1>
-          <i className="fas fa-coins"></i> Pakistan Gold Price Tracker
+          <i className="fas fa-coins"></i> Gold Price Tracker
         </h1>
-        <p className="subtitle">Live gold prices updated every 5 minutes</p>
+        <p className="subtitle">Live Pakistani gold prices updated every 5 minutes</p>
       </header>
 
       <main className="home-main">
         <div className="price-cards-container">
-          {/* 10 Gram Price Card */}
+          {/* 10 Grams Price Card */}
           <div className="price-card">
             <div className="price-header">
               <h2>10 Grams</h2>
@@ -401,16 +201,16 @@ const Home = () => {
               {!loading && prices && (
                 <div className="price-content">
                   <div className="price-value">
-                    {formatPrice(prices.per1Gram)}
+                    {formatPrice(prices.perGram)}
                   </div>
-                  <div className="price-unit">per 1 gram</div>
+                  <div className="price-unit">per gram</div>
                 </div>
               )}
 
               {!loading && !prices && !error && (
                 <div className="price-content">
                   <div className="price-value">--</div>
-                  <div className="price-unit">per 1 gram</div>
+                  <div className="price-unit">per gram</div>
                 </div>
               )}
             </div>
@@ -430,16 +230,16 @@ const Home = () => {
               {!loading && prices && (
                 <div className="price-content">
                   <div className="price-value">
-                    {formatPrice(prices.per1Tola)}
+                    {formatPrice(prices.perTola)}
                   </div>
-                  <div className="price-unit">per 1 tola</div>
+                  <div className="price-unit">per tola</div>
                 </div>
               )}
 
               {!loading && !prices && !error && (
                 <div className="price-content">
                   <div className="price-value">--</div>
-                  <div className="price-unit">per 1 tola</div>
+                  <div className="price-unit">per tola</div>
                 </div>
               )}
             </div>
@@ -448,33 +248,37 @@ const Home = () => {
 
         <div className="info-section">
           <div className="conversion-info">
-            <h3><i className="fas fa-info-circle"></i> Conversion Information</h3>
+            <h3><i className="fas fa-info-circle"></i> Price Conversion Information</h3>
             <div className="conversion-grid">
               <div className="conversion-item">
                 <strong>1 Tola</strong>
                 <span>= 11.6638 grams</span>
               </div>
               <div className="conversion-item">
-                <strong>10 Grams</strong>
-                <span>= 0.8574 tola</span>
+                <strong>1 Gram</strong>
+                <span>= 0.0858 tola</span>
               </div>
               <div className="conversion-item">
-                <strong>1 Gram</strong>
-                <span>= 0.0857 tola</span>
+                <strong>10 Grams</strong>
+                <span>= 0.858 tola</span>
+              </div>
+              <div className="conversion-item">
+                <strong>Pakistani Standard</strong>
+                <span>Tola is traditional unit</span>
               </div>
             </div>
-          </div>
-
-          <div className="price-footer">
-            {lastUpdated && (
-              <div className="last-updated">
-                <i className="fas fa-clock"></i>
-                <span>Last Updated: {formatTime(lastUpdated)}</span>
+            
+            <div className="price-footer">
+              {lastUpdated && (
+                <div className="last-updated">
+                  <i className="fas fa-clock"></i>
+                  <span>Last Updated: {formatTime(lastUpdated)}</span>
+                </div>
+              )}
+              <div className="source-info">
+                <i className="fas fa-link"></i>
+                <span>Source: gold.pk</span>
               </div>
-            )}
-            <div className="source-info">
-              <i className="fas fa-link"></i>
-              <span>Source: gold.pk</span>
             </div>
           </div>
         </div>

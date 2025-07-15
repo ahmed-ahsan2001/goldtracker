@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import GoldPriceScraper from '../utils/goldPriceScraper';
 import './International.css';
 
 const International = () => {
@@ -7,35 +8,28 @@ const International = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [spinning, setSpinning] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
-  // Fetch international gold price
+  const scraper = new GoldPriceScraper();
+  const refreshIntervalMs = 300000; // 5 minutes
+
+  // Fetch international gold price from Kitco
   const fetchInternationalGoldPrice = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // Using API Ninjas Gold Price API
-      const response = await fetch('https://api.api-ninjas.com/v1/goldprice', {
-        headers: {
-          'X-Api-Key': process.env.REACT_APP_API_NINJAS_KEY || 'DEMO_KEY'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const price = await scraper.fetchKitcoGoldPrice();
       
-      if (data.price && data.price > 0) {
-        setGoldPrice(data.price);
+      if (price && price > 0) {
+        setGoldPrice(price);
         setLastUpdated(new Date());
       } else {
-        throw new Error('Invalid price data received');
+        throw new Error('Unable to parse gold price from Kitco');
       }
     } catch (error) {
       console.error('Error fetching international gold price:', error);
-      setError('Unable to fetch international gold price. Please check your API key.');
+      setError('Unable to fetch international gold price from Kitco. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -83,10 +77,57 @@ const International = () => {
     };
   }, []);
 
-  // Initial fetch
+  // Setup intervals and initial fetch
   useEffect(() => {
+    // Initial fetch
     fetchInternationalGoldPrice();
+
+    // Setup auto-refresh
+    const refreshInterval = setInterval(fetchInternationalGoldPrice, refreshIntervalMs);
+
+    // Setup countdown
+    let countdownTime = refreshIntervalMs / 1000;
+    setCountdown(countdownTime);
+
+    const countdownInterval = setInterval(() => {
+      countdownTime -= 1;
+      setCountdown(countdownTime);
+
+      if (countdownTime <= 0) {
+        countdownTime = refreshIntervalMs / 1000;
+        setCountdown(countdownTime);
+      }
+    }, 1000);
+
+    // Cleanup on unmount
+    return () => {
+      clearInterval(refreshInterval);
+      clearInterval(countdownInterval);
+    };
+  }, [fetchInternationalGoldPrice, refreshIntervalMs]);
+
+  // Handle visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Resume when tab becomes visible
+        fetchInternationalGoldPrice();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [fetchInternationalGoldPrice]);
+
+  // Format countdown
+  const formatCountdown = useCallback((seconds) => {
+    if (seconds <= 0) return 'Refreshing...';
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }, []);
 
   const prices = calculatePrices(goldPrice);
 
@@ -102,13 +143,13 @@ const International = () => {
       <main className="international-main">
         <div className="api-notice">
           <div className="notice-content">
-            <i className="fas fa-key"></i>
+            <i className="fas fa-globe"></i>
             <div>
-              <h3>API Key Required</h3>
-              <p>To display live international gold prices, you need an API key from API Ninjas. 
-                 This ensures real-time, accurate pricing data from global markets.</p>
-              <a href="https://api.api-ninjas.com" target="_blank" rel="noopener noreferrer" className="api-link">
-                Get Free API Key →
+              <h3>Live International Gold Prices</h3>
+              <p>Real-time gold prices sourced directly from Kitco.com, one of the world's leading 
+                 precious metals platforms. Data is automatically updated every 5 minutes.</p>
+              <a href="https://www.kitco.com/charts/gold" target="_blank" rel="noopener noreferrer" className="api-link">
+                View Source →
               </a>
             </div>
           </div>
@@ -299,7 +340,18 @@ const International = () => {
             )}
             <div className="source-info">
               <i className="fas fa-link"></i>
-              <span>Source: API Ninjas / Global Markets</span>
+              <span>Source: Kitco.com / Global Markets</span>
+            </div>
+          </div>
+
+          <div className="status-bar">
+            <div className="next-update">
+              <i className="fas fa-refresh"></i>
+              <span>Next update in: {formatCountdown(countdown)}</span>
+            </div>
+            <div className="connection-status">
+              <div className={`status-indicator ${goldPrice ? 'online' : 'offline'}`}></div>
+              <span>{goldPrice ? 'Connected' : 'Connecting...'}</span>
             </div>
           </div>
         </div>
