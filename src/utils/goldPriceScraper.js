@@ -92,15 +92,27 @@ class GoldPriceScraper {
   extractPriceFromText(text) {
     if (!text) return null;
     
-    // Remove currency symbols and keep only digits, commas, and dots
-    const cleanText = text.replace(/[^\d,\.]/g, '');
+    // Find all number sequences in the text
+    const numberPattern = /\d+(?:[,\.]\d+)*/g;
+    const matches = text.match(numberPattern);
     
-    // Remove commas and parse as float
-    const numericValue = parseFloat(cleanText.replace(/,/g, ''));
+    if (!matches || matches.length === 0) return null;
     
-    console.log('Extracting price from:', text, '-> cleaned:', cleanText, '-> numeric:', numericValue);
+    // Take the largest number (likely the price)
+    let largestNumber = 0;
     
-    return isNaN(numericValue) ? null : numericValue;
+    for (const match of matches) {
+      const cleanNumber = match.replace(/,/g, '');
+      const numericValue = parseFloat(cleanNumber);
+      
+      if (!isNaN(numericValue) && numericValue > largestNumber) {
+        largestNumber = numericValue;
+      }
+    }
+    
+    console.log('Extracting price from:', text, '-> matches:', matches, '-> largest:', largestNumber);
+    
+    return largestNumber > 0 ? largestNumber : null;
   }
 
   // Fetch international gold price from Kitco

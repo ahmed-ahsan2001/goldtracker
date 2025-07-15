@@ -10,13 +10,15 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
+### Frontend-Only Architecture
+- **Pure Frontend Application**: No backend dependencies for easy deployment
 - **Multi-Page Application**: Built with React 19 and React Router DOM
 - **Component-Based Architecture**: Modular components for Navigation, Pages, and Features
 - **Dark Theme Design**: Professional dark color scheme with gold accents
 - **Responsive Design**: Mobile-first approach with CSS Grid and Flexbox
 - **Real-time Updates**: Automatic refresh mechanism with countdown timer
 - **Client-Side Routing**: Seamless navigation between pages
+- **CORS Proxy Integration**: Uses proxy services for cross-origin data fetching
 
 ### React Components
 - **Navigation Component**: Sticky navigation with active state indicators
@@ -136,8 +138,8 @@ Preferred communication style: Simple, everyday language.
 - **✅ Kitco Integration**: Added support for scraping Kitco.com H3 tag with specific class
 
 ### Future Enhancements
-- **API Key Integration**: Complete setup for international gold price API
 - **Data Persistence**: Add localStorage for offline capabilities
 - **Historical Data**: Charts and trend analysis
 - **Push Notifications**: Browser notifications for significant price changes
 - **User Preferences**: Save preferred units and refresh intervals
+- **Enhanced Error Recovery**: Better fallback mechanisms for data fetching
