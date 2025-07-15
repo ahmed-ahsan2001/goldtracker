@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a client-side web application that tracks and displays live gold prices. The application fetches gold price data from external sources and presents it in a clean, modern interface with automatic refresh capabilities. It's built as a single-page application using vanilla HTML, CSS, and JavaScript.
+This is a modern React-based web application that tracks and displays live gold prices with multiple calculation units and comprehensive features. The application fetches gold price data from external sources and presents it in a clean, dark-themed interface with automatic refresh capabilities. It's built as a multi-page application using React, React Router, and modern web technologies.
 
 ## User Preferences
 
@@ -11,20 +11,25 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### Frontend Architecture
-- **Single Page Application (SPA)**: Built with vanilla HTML, CSS, and JavaScript
-- **Responsive Design**: Modern CSS with flexbox layout and mobile-first approach
-- **Progressive Enhancement**: Graceful degradation with loading states and error handling
+- **Multi-Page Application**: Built with React 19 and React Router DOM
+- **Component-Based Architecture**: Modular components for Navigation, Pages, and Features
+- **Dark Theme Design**: Professional dark color scheme with gold accents
+- **Responsive Design**: Mobile-first approach with CSS Grid and Flexbox
 - **Real-time Updates**: Automatic refresh mechanism with countdown timer
+- **Client-Side Routing**: Seamless navigation between pages
 
-### Client-Side Components
-- **HTML Structure**: Semantic markup with accessibility considerations
-- **CSS Styling**: Modern design with gradient backgrounds, Google Fonts (Inter), and Font Awesome icons
-- **JavaScript Classes**: Object-oriented approach with a main `GoldPriceTracker` class
+### React Components
+- **Navigation Component**: Sticky navigation with active state indicators
+- **Page Components**: Home, International, About, Contact, Privacy Policy pages
+- **Shared Styling**: Consistent dark theme with gold accent colors
+- **Modern Hooks**: useState, useEffect, useCallback for state management
 
 ## Key Components
 
 ### 1. Price Display System
-- **Current Price Display**: Shows gold price per 10 grams
+- **Multi-Unit Display**: Shows gold prices for 10 grams, 1 gram, and 1 tola (11.6638g)
+- **Calculated Prices**: Automatic conversion between different units
+- **Local & International**: Separate pages for Pakistan and international gold prices
 - **Loading States**: Spinner animation during data fetching
 - **Error Handling**: User-friendly error messages with retry functionality
 - **Status Indicators**: Visual feedback for connection status
@@ -42,10 +47,13 @@ Preferred communication style: Simple, everyday language.
 - **Visibility Handling**: Pauses updates when tab is not active
 
 ### 4. User Interface Elements
-- **Price Card**: Central display component with header, content, and footer
+- **Navigation Bar**: Sticky navigation with page routing
+- **Price Cards**: Multiple cards for different weight units
+- **Information Pages**: About Us, Contact, Privacy Policy pages
 - **Interactive Controls**: Refresh button and retry functionality
 - **Responsive Layout**: Adapts to different screen sizes
 - **Visual Feedback**: Loading spinners, status indicators, and smooth transitions
+- **Dark Theme**: Professional dark color scheme with gold accents
 
 ## Data Flow
 
@@ -76,15 +84,20 @@ Preferred communication style: Simple, everyday language.
 - **CORS Proxy Services**: 
   - `api.allorigins.win` (primary)
   - `corsproxy.io` (fallback)
-- **Data Source**: gold.pk website for price scraping
+- **Data Sources**: 
+  - gold.pk website for Pakistani gold prices
+  - API Ninjas for international gold prices
 - **Google Fonts**: Inter font family for typography
 - **Font Awesome**: Icons for UI elements
+- **React Router**: Client-side routing for navigation
 
-### Browser APIs
+### Browser APIs & Dependencies
 - **Fetch API**: For making HTTP requests
 - **Document Visibility API**: For handling tab visibility changes
-- **DOM Manipulation**: Standard DOM APIs for UI updates
+- **React**: Component-based UI library
+- **React Router DOM**: Client-side routing
 - **Timers**: setInterval/setTimeout for scheduling
+- **Modern React Hooks**: useState, useEffect, useCallback
 
 ## Deployment Strategy
 
@@ -111,8 +124,18 @@ Preferred communication style: Simple, everyday language.
 - **Error Recovery**: Multiple retry strategies and user feedback
 - **Performance**: Efficient DOM manipulation and resource cleanup
 
+### Recent Changes (July 15, 2025)
+- **✅ Migrated to React**: Converted from vanilla JavaScript to React 19
+- **✅ Multi-Page Architecture**: Added routing with Home, International, About, Contact, Privacy pages
+- **✅ Enhanced Price Display**: Added 1 gram and 1 tola calculations alongside 10 grams
+- **✅ Dark Theme**: Implemented professional dark color scheme with gold accents
+- **✅ International Prices**: Added support for global gold prices via API Ninjas
+- **✅ Responsive Navigation**: Sticky navigation bar with active state indicators
+- **✅ Unit Conversions**: Automatic calculations between grams, tolas, and ounces
+
 ### Future Enhancements
-- **Data Persistence**: Could add localStorage for offline capabilities
-- **Multiple Currencies**: Support for different currency displays
+- **API Key Integration**: Complete setup for international gold price API
+- **Data Persistence**: Add localStorage for offline capabilities
 - **Historical Data**: Charts and trend analysis
 - **Push Notifications**: Browser notifications for significant price changes
+- **User Preferences**: Save preferred units and refresh intervals
