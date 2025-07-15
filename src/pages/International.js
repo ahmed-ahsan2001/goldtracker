@@ -10,7 +10,7 @@ const International = () => {
   const [spinning, setSpinning] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
-  const scraper = new GoldPriceScraper();
+  const [scraper] = useState(() => new GoldPriceScraper());
   const refreshIntervalMs = 300000; // 5 minutes
 
   // Fetch international gold price from Kitco
@@ -37,11 +37,15 @@ const International = () => {
 
   // Manual refresh
   const handleManualRefresh = useCallback(() => {
+    if (loading) return; // Prevent multiple simultaneous requests
+    
     setSpinning(true);
     fetchInternationalGoldPrice().finally(() => {
-      setSpinning(false);
+      setTimeout(() => {
+        setSpinning(false);
+      }, 500); // Small delay to prevent flickering
     });
-  }, [fetchInternationalGoldPrice]);
+  }, [fetchInternationalGoldPrice, loading]);
 
   // Format time
   const formatTime = useCallback((date) => {

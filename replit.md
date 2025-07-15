@@ -11,7 +11,7 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### Frontend-Only Architecture
-- **Pure Frontend Application**: No backend dependencies for easy deployment
+- **Pure Frontend Application**: No backend or Python dependencies for easy deployment
 - **Multi-Page Application**: Built with React 19 and React Router DOM
 - **Component-Based Architecture**: Modular components for Navigation, Pages, and Features
 - **Dark Theme Design**: Professional dark color scheme with gold accents
@@ -136,6 +136,9 @@ Preferred communication style: Simple, everyday language.
 - **✅ Unit Conversions**: Automatic calculations between grams, tolas, and ounces
 - **✅ Unified Scraper**: Created GoldPriceScraper class for both local and international prices
 - **✅ Kitco Integration**: Added support for scraping Kitco.com H3 tag with specific class
+- **✅ Removed Python Dependencies**: Eliminated all Python files for frontend-only deployment
+- **✅ Fixed Price Extraction**: Improved number parsing to correctly handle Pakistani rupee format
+- **✅ Anti-Flickering**: Added safeguards to prevent UI flickering during manual refresh
 
 ### Future Enhancements
 - **Data Persistence**: Add localStorage for offline capabilities

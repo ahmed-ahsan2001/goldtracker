@@ -11,7 +11,7 @@ const Home = () => {
   const [countdown, setCountdown] = useState(0);
   const [spinning, setSpinning] = useState(false);
 
-  const scraper = new GoldPriceScraper();
+  const [scraper] = useState(() => new GoldPriceScraper());
   const refreshIntervalMs = 300000; // 5 minutes
 
   // Conversion constants
@@ -44,11 +44,15 @@ const Home = () => {
 
   // Manual refresh
   const handleManualRefresh = useCallback(() => {
+    if (loading) return; // Prevent multiple simultaneous requests
+    
     setSpinning(true);
     fetchGoldPrice().finally(() => {
-      setSpinning(false);
+      setTimeout(() => {
+        setSpinning(false);
+      }, 500); // Small delay to prevent flickering
     });
-  }, [fetchGoldPrice]);
+  }, [fetchGoldPrice, loading]);
 
   // Format time
   const formatTime = useCallback((date) => {
@@ -159,7 +163,7 @@ const Home = () => {
             </div>
 
             <div className="price-display">
-              {loading && (
+              {loading && !goldPrice && (
                 <div className="loading">
                   <div className="spinner"></div>
                   <p>Fetching latest gold prices...</p>
@@ -175,7 +179,16 @@ const Home = () => {
                 </div>
               )}
 
-              {!loading && error && (
+              {loading && goldPrice && (
+                <div className="price-content">
+                  <div className="price-value">
+                    {formatPrice(goldPrice)}
+                  </div>
+                  <div className="price-unit">per 10 grams</div>
+                </div>
+              )}
+
+              {!loading && error && !goldPrice && (
                 <div className="error-message">
                   <i className="fas fa-exclamation-triangle"></i>
                   <p>{error}</p>
@@ -198,7 +211,7 @@ const Home = () => {
             </div>
 
             <div className="price-display">
-              {!loading && prices && (
+              {prices && (
                 <div className="price-content">
                   <div className="price-value">
                     {formatPrice(prices.perGram)}
@@ -207,7 +220,7 @@ const Home = () => {
                 </div>
               )}
 
-              {!loading && !prices && !error && (
+              {!prices && (
                 <div className="price-content">
                   <div className="price-value">--</div>
                   <div className="price-unit">per gram</div>
@@ -227,7 +240,7 @@ const Home = () => {
             </div>
 
             <div className="price-display">
-              {!loading && prices && (
+              {prices && (
                 <div className="price-content">
                   <div className="price-value">
                     {formatPrice(prices.perTola)}
@@ -236,7 +249,7 @@ const Home = () => {
                 </div>
               )}
 
-              {!loading && !prices && !error && (
+              {!prices && (
                 <div className="price-content">
                   <div className="price-value">--</div>
                   <div className="price-unit">per tola</div>
