@@ -21,7 +21,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python3 -m http.server 5000"
+args = "SKIP_PREFLIGHT_CHECK=true HOST=0.0.0.0 PORT=5000 npx react-scripts start"
 waitForPort = 5000
 
 [[ports]]
