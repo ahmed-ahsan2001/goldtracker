@@ -57,19 +57,42 @@ const App = () => {
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
 
+      console.log('Attempting to parse HTML, length:', html.length);
+      
+      // Check if goldratehome class exists
+      const goldRateElements = doc.querySelectorAll('.goldratehome');
+      console.log('Found goldratehome elements:', goldRateElements.length);
+      
+      if (goldRateElements.length > 0) {
+        goldRateElements.forEach((el, index) => {
+          console.log(`goldratehome element ${index}:`, el.textContent);
+        });
+      }
+
       // Multiple strategies to find the gold price
       const strategies = [
-        // Strategy 1: Look for common gold price selectors and table structures
+        // Strategy 1: Look for the specific goldratehome class from gold.pk
+        () => {
+          const goldRateElement = doc.querySelector('.goldratehome');
+          if (goldRateElement) {
+            const price = extractPriceFromText(goldRateElement.textContent);
+            if (price && price > 50000 && price < 500000) {
+              console.log('Found price using goldratehome class:', price);
+              return price;
+            }
+          }
+          return null;
+        },
+
+        // Strategy 2: Look for other common gold price selectors
         () => {
           const selectors = [
+            'p.goldratehome',
             '[data-gold-price]',
             '.gold-price',
             '#gold-price',
             '.price-value',
-            '.current-price',
-            'td:contains("10 gram")',
-            'td:contains("10g")',
-            'td:contains("10 Gram")'
+            '.current-price'
           ];
 
           for (const selector of selectors) {
@@ -77,6 +100,7 @@ const App = () => {
             if (element) {
               const price = extractPriceFromText(element.textContent);
               if (price && price > 50000 && price < 500000) {
+                console.log('Found price using selector:', selector, price);
                 return price;
               }
             }
@@ -84,7 +108,7 @@ const App = () => {
           return null;
         },
 
-        // Strategy 2: Look for table rows with gold price data
+        // Strategy 3: Look for table rows with gold price data
         () => {
           const rows = doc.querySelectorAll('tr');
           for (const row of rows) {
@@ -114,7 +138,7 @@ const App = () => {
           return null;
         },
 
-        // Strategy 3: Enhanced regex search with better patterns
+        // Strategy 4: Enhanced regex search with better patterns
         () => {
           // Look for price patterns in the entire HTML
           const pricePatterns = [
@@ -137,7 +161,7 @@ const App = () => {
           return null;
         },
 
-        // Strategy 4: Look for price in specific table contexts
+        // Strategy 5: Look for price in specific table contexts
         () => {
           const tables = doc.querySelectorAll('table');
           for (const table of tables) {
@@ -164,7 +188,7 @@ const App = () => {
           return null;
         },
 
-        // Strategy 5: Look for any numeric values that could be gold prices
+        // Strategy 6: Look for any numeric values that could be gold prices
         () => {
           const allText = doc.body.textContent;
           const priceMatches = allText.match(/\d{1,3}(?:[,\.]?\d{3})*/g);
