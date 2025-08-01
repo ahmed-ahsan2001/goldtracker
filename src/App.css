@@ -9,6 +9,11 @@
 html {
     scroll-behavior: smooth;
 }
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #1a1a2e; /* same fallback */
+}
 
 /* Global dark theme adjustments */
 body {

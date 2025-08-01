@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import GoldPriceScraper from '../utils/goldPriceScraper';
+import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
 import './Home.css';
-
+import { useMemo } from 'react';
 const Home = () => {
   const [goldPrice, setGoldPrice] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -13,6 +14,15 @@ const Home = () => {
 
   const [scraper] = useState(() => new GoldPriceScraper());
   const refreshIntervalMs = 300000; // 5 minutes
+const mockDailyPrices = useMemo(() => [
+  { date: 'Jul 26', price: 221000 },
+  { date: 'Jul 27', price: 222500 },
+  { date: 'Jul 28', price: 220800 },
+  { date: 'Jul 29', price: 224000 },
+  { date: 'Jul 30', price: 223200 },
+  { date: 'Jul 31', price: 225000 },
+  { date: 'Aug 01', price: 226500 },
+], []);
 
   // Conversion constants
   const GRAMS_PER_TOLA = 11.6638;
@@ -306,6 +316,19 @@ const Home = () => {
             <span>{isOnline ? 'Connected' : 'Connecting...'}</span>
           </div>
         </div>
+        <div className="chart-section">
+  <h3><i className="fas fa-chart-line"></i> Gold Price (Last 7 Days)</h3>
+  <ResponsiveContainer width="100%" height={300}>
+    <LineChart data={mockDailyPrices}>
+      <CartesianGrid stroke="#444" strokeDasharray="3 3" />
+      <XAxis dataKey="date" stroke="#ccc" />
+      <YAxis stroke="#ccc" />
+      <Tooltip />
+      <Line type="monotone" dataKey="price" stroke="#ffd700" strokeWidth={2} dot={{ r: 3 }} isAnimationActive={false} />
+    </LineChart>
+  </ResponsiveContainer>
+</div>
+
       </main>
     </div>
   );
