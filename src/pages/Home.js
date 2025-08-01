@@ -74,13 +74,13 @@ const Home = () => {
   }, []);
 
   // Calculate prices for different units
-  const calculatePrices = useCallback((per10GramPrice) => {
-    if (!per10GramPrice) return null;
+  const calculatePrices = useCallback((perTolaPrice) => {
+    if (!perTolaPrice) return null;
     
     return {
-      per10Gram: per10GramPrice,
-      perGram: per10GramPrice / 10,
-      perTola: (per10GramPrice / 10) * GRAMS_PER_TOLA
+      per10Gram: (perTolaPrice / GRAMS_PER_TOLA) * 10,
+      perGram: perTolaPrice / 11.6638,
+      perTola: perTolaPrice
     };
   }, []);
 
@@ -144,7 +144,7 @@ const Home = () => {
         <h1>
           <i className="fas fa-coins"></i> Gold Price Tracker
         </h1>
-        <p className="subtitle">Live Pakistani gold prices updated every 5 minutes</p>
+        <p className="subtitle">Live Pakistani gold prices updated according to bullion</p>
       </header>
 
       <main className="home-main">
@@ -152,7 +152,7 @@ const Home = () => {
           {/* 10 Grams Price Card */}
           <div className="price-card">
             <div className="price-header">
-              <h2>10 Grams</h2>
+              <h2>24 Karat ( 1 Tola ) </h2>
               <button 
                 className={`refresh-btn ${spinning ? 'spinning' : ''}`}
                 onClick={handleManualRefresh}
@@ -173,9 +173,9 @@ const Home = () => {
               {!loading && prices && (
                 <div className="price-content">
                   <div className="price-value">
-                    {formatPrice(prices.per10Gram)}
+                    {formatPrice(prices.perTola)}
                   </div>
-                  <div className="price-unit">per 10 grams</div>
+                  <div className="price-unit">per Tola</div>
                 </div>
               )}
 
@@ -184,7 +184,7 @@ const Home = () => {
                   <div className="price-value">
                     {formatPrice(goldPrice)}
                   </div>
-                  <div className="price-unit">per 10 grams</div>
+                  <div className="price-unit">per Tola</div>
                 </div>
               )}
 
@@ -229,13 +229,13 @@ const Home = () => {
             </div>
           </div>
 
-          {/* 1 Tola Price Card */}
+          {/* 10 gram Price Card */}
           <div className="price-card">
             <div className="price-header">
-              <h2>1 Tola</h2>
+              <h2>10 Gram</h2>
               <div className="price-badge">
                 <i className="fas fa-calculator"></i>
-                <span>11.66g</span>
+                <span></span>
               </div>
             </div>
 
@@ -243,9 +243,9 @@ const Home = () => {
               {prices && (
                 <div className="price-content">
                   <div className="price-value">
-                    {formatPrice(prices.perTola)}
+                    {formatPrice(prices.per10Gram)}
                   </div>
-                  <div className="price-unit">per tola</div>
+                  <div className="price-unit">per 10 grams</div>
                 </div>
               )}
 
@@ -290,7 +290,7 @@ const Home = () => {
               )}
               <div className="source-info">
                 <i className="fas fa-link"></i>
-                <span>Source: gold.pk</span>
+                <span></span>
               </div>
             </div>
           </div>

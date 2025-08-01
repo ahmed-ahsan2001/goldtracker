@@ -70,7 +70,7 @@ const International = () => {
   const calculatePrices = useCallback((perOuncePrice) => {
     if (!perOuncePrice) return null;
     
-    const GRAMS_PER_OUNCE = 31.1035;
+    const GRAMS_PER_OUNCE = 31.1;
     const GRAMS_PER_TOLA = 11.6638;
     
     return {
@@ -150,11 +150,9 @@ const International = () => {
             <i className="fas fa-globe"></i>
             <div>
               <h3>Live International Gold Prices</h3>
-              <p>Real-time gold prices sourced directly from Kitco.com, one of the world's leading 
+              <p>Real-time gold prices, one of the world's leading 
                  precious metals platforms. Data is automatically updated every 5 minutes.</p>
-              <a href="https://www.kitco.com/charts/gold" target="_blank" rel="noopener noreferrer" className="api-link">
-                View Source →
-              </a>
+              
             </div>
           </div>
         </div>
@@ -320,10 +318,7 @@ const International = () => {
                 <strong>Trading Hours</strong>
                 <span>24/7 Global Markets</span>
               </div>
-              <div className="market-item">
-                <strong>Primary Markets</strong>
-                <span>COMEX, LBMA, Shanghai</span>
-              </div>
+             
               <div className="market-item">
                 <strong>Currency</strong>
                 <span>USD (US Dollar)</span>
@@ -342,10 +337,7 @@ const International = () => {
                 <span>Last Updated: {formatTime(lastUpdated)}</span>
               </div>
             )}
-            <div className="source-info">
-              <i className="fas fa-link"></i>
-              <span>Source: Kitco.com / Global Markets</span>
-            </div>
+            
           </div>
 
           <div className="status-bar">

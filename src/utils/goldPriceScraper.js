@@ -116,76 +116,45 @@ class GoldPriceScraper {
   }
 
   // Fetch international gold price from Kitco
-  async fetchKitcoGoldPrice() {
-    try {
-      const html = await this.fetchWithProxy('https://www.kitco.com/charts/gold');
-      
-      // Parse the HTML
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
+async fetchKitcoGoldPrice() {
+  try {
+    const html = await this.fetchWithProxy('https://www.goldrate24.com/');
 
-      console.log('Attempting to parse Kitco HTML, length:', html.length);
-      
-      // Look for the specific h3 tag with the class (handling CSS selectors properly)
-      const priceElement = doc.querySelector('h3.font-mulish.mb-\\[3px\\].text-4xl.font-bold.leading-normal.tracking-\\[1px\\]') ||
-                          doc.querySelector('h3[class*="font-mulish"][class*="text-4xl"][class*="font-bold"]');
-      
-      if (priceElement) {
-        console.log('Found Kitco price element:', priceElement.textContent);
-        const priceText = priceElement.textContent.trim();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    const table = doc.querySelector('table.now');
+    if (!table) {
+      console.error('❌ Table with class "now" not found.');
+      return null;
+    }
+
+    const rows = table.querySelectorAll('tr');
+    for (const row of rows) {
+      const th = row.querySelector('th');
+      const td = row.querySelector('td');
+
+      if (th && td && th.textContent.trim() === 'Gold Ounce') {
+        const priceText = td.textContent.trim();
         const price = this.extractPriceFromText(priceText);
-        
-        if (price && price > 1000 && price < 10000) { // Reasonable range for gold price per ounce
-          console.log('Successfully parsed Kitco price:', price);
+
+        if (price && price > 1000 && price < 10000) {
+          
           return price;
         }
       }
-
-      // Alternative selectors if the main one fails
-      const alternativeSelectors = [
-        'h3[class*="font-mulish"][class*="text-4xl"]',
-        'h3[class*="font-bold"][class*="leading-normal"]',
-        '.font-mulish.text-4xl',
-        '[class*="text-4xl"][class*="font-bold"]',
-        'h3.text-4xl',
-        '.price-display h3',
-        '[data-price]',
-        '.gold-price'
-      ];
-
-      for (const selector of alternativeSelectors) {
-        const element = doc.querySelector(selector);
-        if (element) {
-          console.log(`Trying alternative selector ${selector}:`, element.textContent);
-          const price = this.extractPriceFromText(element.textContent);
-          if (price && price > 1000 && price < 10000) {
-            console.log('Successfully parsed price with alternative selector:', price);
-            return price;
-          }
-        }
-      }
-
-      // Last resort: look for any element containing a price pattern
-      const allElements = doc.querySelectorAll('*');
-      for (const element of allElements) {
-        const text = element.textContent.trim();
-        if (text.match(/\$\d{1,2},?\d{3}\.\d{2}/)) {
-          const price = this.extractPriceFromText(text);
-          if (price && price > 1000 && price < 10000) {
-            console.log('Found price in element:', text);
-            return price;
-          }
-        }
-      }
-
-      console.error('Failed to parse gold price from Kitco HTML');
-      return null;
-
-    } catch (error) {
-      console.error('Error fetching Kitco gold price:', error);
-      throw error;
     }
+
+    
+    return null;
+
+  } catch (error) {
+   
+    throw error;
   }
+}
+
+
 
   // Fetch local Pakistan gold price from gold.pk
   async fetchPakistanGoldPrice() {
@@ -200,11 +169,11 @@ class GoldPriceScraper {
       
       // Check if goldratehome class exists
       const goldRateElements = doc.querySelectorAll('.goldratehome');
-      console.log('Found goldratehome elements:', goldRateElements.length);
+      
       
       if (goldRateElements.length > 0) {
         goldRateElements.forEach((el, index) => {
-          console.log(`goldratehome element ${index}:`, el.textContent);
+          
         });
       }
 
@@ -284,7 +253,7 @@ class GoldPriceScraper {
       for (const strategy of strategies) {
         const price = strategy();
         if (price && price > 0) {
-          console.log('Successfully parsed Pakistan gold price:', price);
+          
           return price;
         }
       }
