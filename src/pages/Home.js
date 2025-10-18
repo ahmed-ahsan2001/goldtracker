@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import GoldPriceScraper from '../utils/goldPriceScraper';
+import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import './Home.css';
 
 const Home = () => {
   const [goldPrice, setGoldPrice] = useState(null);
+  const [goldPrice22k, setGoldPrice22k] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -11,33 +12,35 @@ const Home = () => {
   const [countdown, setCountdown] = useState(0);
   const [spinning, setSpinning] = useState(false);
 
-  const [scraper] = useState(() => new GoldPriceScraper());
   const refreshIntervalMs = 300000; // 5 minutes
-
   const GRAMS_PER_TOLA = 11.6638;
 
+  // ✅ Fetch gold prices from your backend API
   const fetchGoldPrice = useCallback(async () => {
     setLoading(true);
     setError(null);
     setIsOnline(false);
 
     try {
-      const price = await scraper.fetchPakistanGoldPrice();
-      if (price) {
-        setGoldPrice(price);
-        setLastUpdated(new Date());
+      const res = await axios.get("http://localhost:5000/api/gold-prices");
+      const data = res.data?.data;
+
+      if (data?.pk?.rate24k && data?.pk?.rate22k) {
+        setGoldPrice(data.pk.rate24k);
+        setGoldPrice22k(data.pk.rate22k);
+        setLastUpdated(new Date(data.timestamp));
         setIsOnline(true);
       } else {
-        throw new Error('Unable to parse gold price from the website');
+        throw new Error("Invalid gold price data from API");
       }
     } catch (error) {
-      console.error('Error fetching gold price:', error);
+      console.error("❌ Error fetching gold price:", error.message);
       setError(error.message);
       setIsOnline(false);
     } finally {
       setLoading(false);
     }
-  }, [scraper]);
+  }, []);
 
   const handleManualRefresh = useCallback(() => {
     if (loading) return;
@@ -106,7 +109,8 @@ const Home = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   }, []);
 
-  const prices = calculatePrices(goldPrice);
+  const prices24k = calculatePrices(goldPrice);
+  const prices22k = calculatePrices(goldPrice22k);
 
   // Converter state
   const [inputValue, setInputValue] = useState('');
@@ -115,7 +119,7 @@ const Home = () => {
   const [convertedValue, setConvertedValue] = useState(null);
 
   const handleConvert = () => {
-    if (!inputValue || !prices) return;
+    if (!inputValue || !prices24k) return;
     let valueInTola;
     if (fromUnit === 'tola') valueInTola = parseFloat(inputValue);
     if (fromUnit === 'gram') valueInTola = parseFloat(inputValue) / GRAMS_PER_TOLA;
@@ -131,70 +135,105 @@ const Home = () => {
 
   return (
     <div className="home-container">
-      <header className="home-header">
-        <h1><i className="fas fa-coins"></i> Gold Price Tracker</h1>
-        <p className="subtitle">Live Pakistani gold prices updated according to bullion</p>
+      <header className="international-header">
+        <h1><i className="fas fa-globe"></i> Pakistan Gold Prices</h1>
+        <p className="subtitle">Live Pakistan gold prices from global markets</p>
       </header>
 
       <main className="home-main">
+        <div className="api-notice">
+          <div className="notice-content">
+            <i className="fas fa-globe"></i>
+            <div>
+              <h3>Live Pakistan Gold Prices</h3>
+              <p>Real-time gold prices updated from trusted sources automatically.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ===== 24K Gold Prices ===== */}
+        <h2 className="karat-heading">24 Karat Rates</h2>
         <div className="price-cards-container">
-          {/* Tola */}
           <div className="price-card">
             <div className="price-header">
-              <h2>24 Karat (1 Tola)</h2>
+              <h2>1 Tola (24K)</h2>
               <button className={`refresh-btn ${spinning ? 'spinning' : ''}`} onClick={handleManualRefresh}>
                 <i className="fas fa-sync-alt"></i>
               </button>
             </div>
             <div className="price-display">
-              {loading && !goldPrice && (
+              {loading ? (
                 <div className="loading">
                   <div className="spinner"></div>
                   <p>Fetching latest gold prices...</p>
                 </div>
-              )}
-              {!loading && prices && (
+              ) : prices24k ? (
                 <div className="price-content">
-                  <div className="price-value">{formatPrice(prices.perTola)}</div>
+                  <div className="price-value">{formatPrice(prices24k.perTola)}</div>
                   <div className="price-unit">per Tola</div>
                 </div>
-              )}
-              {!loading && error && !goldPrice && (
-                <div className="error-message">
-                  <p>{error}</p>
-                  <button className="retry-btn" onClick={fetchGoldPrice}>Try Again</button>
-                </div>
+              ) : (
+                <div className="error-message">No data</div>
               )}
             </div>
           </div>
 
-          {/* 1 Gram */}
           <div className="price-card">
-            <div className="price-header">
-              <h2>1 Gram</h2>
-            </div>
+            <div className="price-header"><h2>1 Gram</h2></div>
             <div className="price-display">
               <div className="price-content">
-                <div className="price-value">{prices ? formatPrice(prices.perGram) : '--'}</div>
+                <div className="price-value">{prices24k ? formatPrice(prices24k.perGram) : '--'}</div>
                 <div className="price-unit">per gram</div>
               </div>
             </div>
           </div>
 
-          {/* 10 Gram */}
           <div className="price-card">
-            <div className="price-header">
-              <h2>10 Gram</h2>
-            </div>
+            <div className="price-header"><h2>10 Gram</h2></div>
             <div className="price-display">
               <div className="price-content">
-                <div className="price-value">{prices ? formatPrice(prices.per10Gram) : '--'}</div>
+                <div className="price-value">{prices24k ? formatPrice(prices24k.per10Gram) : '--'}</div>
                 <div className="price-unit">per 10 grams</div>
               </div>
             </div>
           </div>
         </div>
 
+        {/* ===== 22K Gold Prices ===== */}
+        <h2 className="karat-heading">22 Karat Rates</h2>
+        <div className="price-cards-container">
+          <div className="price-card">
+            <div className="price-header"><h2>1 Tola (22K)</h2></div>
+            <div className="price-display">
+              <div className="price-content">
+                <div className="price-value">{prices22k ? formatPrice(prices22k.perTola) : '--'}</div>
+                <div className="price-unit">per Tola</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="price-card">
+            <div className="price-header"><h2>1 Gram</h2></div>
+            <div className="price-display">
+              <div className="price-content">
+                <div className="price-value">{prices22k ? formatPrice(prices22k.perGram) : '--'}</div>
+                <div className="price-unit">per gram</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="price-card">
+            <div className="price-header"><h2>10 Gram</h2></div>
+            <div className="price-display">
+              <div className="price-content">
+                <div className="price-value">{prices22k ? formatPrice(prices22k.per10Gram) : '--'}</div>
+                <div className="price-unit">per 10 grams</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ===== Converter Section ===== */}
         <div className="converter-section">
           <h3><i className="fas fa-exchange-alt"></i> Gold Unit Converter</h3>
           <p>Convert between tola, gram, and 10 grams instantly using live prices.</p>
@@ -236,20 +275,19 @@ const Home = () => {
           </div>
         </div>
       </main>
-            {/* Footer */}
+
+      {/* Footer */}
       <footer className="footer">
         <div className="footer-content">
           <div className="footer-left">
             <h4>Gold Price Tracker</h4>
             <p>Stay updated with the latest bullion rates in Pakistan.</p>
           </div>
-
           <div className="footer-center">
             <a href="/" className="footer-link">Home</a>
             <a href="#converter" className="footer-link">Converter</a>
             <a href="#contact" className="footer-link">Contact</a>
           </div>
-
           <div className="footer-right">
             <span className="footer-dev">Developed by <a href="https://codevente.com" target="_blank" rel="noopener noreferrer">Codevente</a></span>
             <div className="footer-icons">
@@ -262,7 +300,6 @@ const Home = () => {
           <p>© {new Date().getFullYear()} Gold Price Tracker — All Rights Reserved</p>
         </div>
       </footer>
-
     </div>
   );
 };

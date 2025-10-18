@@ -17,12 +17,26 @@ const Contact = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Here you would typically send the form data to your backend
-    alert('Thank you for your message! We will get back to you soon.');
-    setFormData({ name: '', email: '', subject: '', message: '' });
-  };
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const response = await fetch("http://localhost:5000/api/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
+    const result = await response.json();
+
+    if (result.success) {
+      alert("✅ Message sent successfully!");
+      setFormData({ name: "", email: "", subject: "", message: "" });
+    } else {
+      alert("❌ Failed to send message. Please try again later.");
+    }
+  } catch (error) {
+    alert("❌ Error sending message: " + error.message);
+  }
+};
 
   return (
     <div className="contact-container">
@@ -43,18 +57,12 @@ const Contact = () => {
             </p>
 
             <div className="contact-methods">
-              <div className="contact-method">
-                <i className="fas fa-envelope"></i>
-                <div>
-                  <h3>Email</h3>
-                  <p>info@goldpricetracker.com</p>
-                </div>
-              </div>
+              
               <div className="contact-method">
                 <i className="fas fa-phone"></i>
                 <div>
                   <h3>Phone</h3>
-                  <p>+92 21 1234 5678</p>
+                  <p>+92 312 2739457</p>
                 </div>
               </div>
               <div className="contact-method">
