@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import GoldPriceScraper from '../utils/goldPriceScraper';
-import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
 import './Home.css';
-import { useMemo } from 'react';
+
 const Home = () => {
   const [goldPrice, setGoldPrice] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -14,20 +13,9 @@ const Home = () => {
 
   const [scraper] = useState(() => new GoldPriceScraper());
   const refreshIntervalMs = 300000; // 5 minutes
-const mockDailyPrices = useMemo(() => [
-  { date: 'Jul 26', price: 221000 },
-  { date: 'Jul 27', price: 222500 },
-  { date: 'Jul 28', price: 220800 },
-  { date: 'Jul 29', price: 224000 },
-  { date: 'Jul 30', price: 223200 },
-  { date: 'Jul 31', price: 225000 },
-  { date: 'Aug 01', price: 226500 },
-], []);
 
-  // Conversion constants
   const GRAMS_PER_TOLA = 11.6638;
 
-  // Fetch Pakistan gold price
   const fetchGoldPrice = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -35,7 +23,6 @@ const mockDailyPrices = useMemo(() => [
 
     try {
       const price = await scraper.fetchPakistanGoldPrice();
-
       if (price) {
         setGoldPrice(price);
         setLastUpdated(new Date());
@@ -52,93 +39,66 @@ const mockDailyPrices = useMemo(() => [
     }
   }, [scraper]);
 
-  // Manual refresh
   const handleManualRefresh = useCallback(() => {
-    if (loading) return; // Prevent multiple simultaneous requests
-    
+    if (loading) return;
     setSpinning(true);
     fetchGoldPrice().finally(() => {
-      setTimeout(() => {
-        setSpinning(false);
-      }, 500); // Small delay to prevent flickering
+      setTimeout(() => setSpinning(false), 500);
     });
   }, [fetchGoldPrice, loading]);
 
-  // Format time
   const formatTime = useCallback((date) => {
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
     });
   }, []);
 
-  // Format price
   const formatPrice = useCallback((price) => {
     return new Intl.NumberFormat('en-PK', {
       style: 'currency',
       currency: 'PKR',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     }).format(price);
   }, []);
 
-  // Calculate prices for different units
   const calculatePrices = useCallback((perTolaPrice) => {
     if (!perTolaPrice) return null;
-    
     return {
       per10Gram: (perTolaPrice / GRAMS_PER_TOLA) * 10,
-      perGram: perTolaPrice / 11.6638,
-      perTola: perTolaPrice
+      perGram: perTolaPrice / GRAMS_PER_TOLA,
+      perTola: perTolaPrice,
     };
   }, []);
 
-  // Setup intervals
   useEffect(() => {
-    // Initial fetch
     fetchGoldPrice();
 
-    // Setup auto-refresh
     const refreshInterval = setInterval(fetchGoldPrice, refreshIntervalMs);
-
-    // Setup countdown
     let countdownTime = refreshIntervalMs / 1000;
     setCountdown(countdownTime);
 
     const countdownInterval = setInterval(() => {
       countdownTime -= 1;
-      setCountdown(countdownTime);
-
-      if (countdownTime <= 0) {
-        countdownTime = refreshIntervalMs / 1000;
-        setCountdown(countdownTime);
-      }
+      setCountdown(countdownTime <= 0 ? refreshIntervalMs / 1000 : countdownTime);
     }, 1000);
 
-    // Cleanup on unmount
     return () => {
       clearInterval(refreshInterval);
       clearInterval(countdownInterval);
     };
   }, [fetchGoldPrice, refreshIntervalMs]);
 
-  // Handle visibility change
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        // Resume when tab becomes visible
-        fetchGoldPrice();
-      }
+      if (!document.hidden) fetchGoldPrice();
     };
-
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [fetchGoldPrice]);
 
-  // Format countdown
   const formatCountdown = useCallback((seconds) => {
     if (seconds <= 0) return 'Refreshing...';
     const minutes = Math.floor(seconds / 60);
@@ -148,30 +108,44 @@ const mockDailyPrices = useMemo(() => [
 
   const prices = calculatePrices(goldPrice);
 
+  // Converter state
+  const [inputValue, setInputValue] = useState('');
+  const [fromUnit, setFromUnit] = useState('tola');
+  const [toUnit, setToUnit] = useState('gram');
+  const [convertedValue, setConvertedValue] = useState(null);
+
+  const handleConvert = () => {
+    if (!inputValue || !prices) return;
+    let valueInTola;
+    if (fromUnit === 'tola') valueInTola = parseFloat(inputValue);
+    if (fromUnit === 'gram') valueInTola = parseFloat(inputValue) / GRAMS_PER_TOLA;
+    if (fromUnit === '10gram') valueInTola = parseFloat(inputValue) / (GRAMS_PER_TOLA / 10);
+
+    let result;
+    if (toUnit === 'tola') result = valueInTola;
+    if (toUnit === 'gram') result = valueInTola * GRAMS_PER_TOLA;
+    if (toUnit === '10gram') result = (valueInTola * GRAMS_PER_TOLA) / 10;
+
+    setConvertedValue(result.toFixed(2));
+  };
+
   return (
     <div className="home-container">
       <header className="home-header">
-        <h1>
-          <i className="fas fa-coins"></i> Gold Price Tracker
-        </h1>
+        <h1><i className="fas fa-coins"></i> Gold Price Tracker</h1>
         <p className="subtitle">Live Pakistani gold prices updated according to bullion</p>
       </header>
 
       <main className="home-main">
         <div className="price-cards-container">
-          {/* 10 Grams Price Card */}
+          {/* Tola */}
           <div className="price-card">
             <div className="price-header">
-              <h2>24 Karat ( 1 Tola ) </h2>
-              <button 
-                className={`refresh-btn ${spinning ? 'spinning' : ''}`}
-                onClick={handleManualRefresh}
-                title="Refresh Now"
-              >
+              <h2>24 Karat (1 Tola)</h2>
+              <button className={`refresh-btn ${spinning ? 'spinning' : ''}`} onClick={handleManualRefresh}>
                 <i className="fas fa-sync-alt"></i>
               </button>
             </div>
-
             <div className="price-display">
               {loading && !goldPrice && (
                 <div className="loading">
@@ -179,131 +153,76 @@ const mockDailyPrices = useMemo(() => [
                   <p>Fetching latest gold prices...</p>
                 </div>
               )}
-
               {!loading && prices && (
                 <div className="price-content">
-                  <div className="price-value">
-                    {formatPrice(prices.perTola)}
-                  </div>
+                  <div className="price-value">{formatPrice(prices.perTola)}</div>
                   <div className="price-unit">per Tola</div>
                 </div>
               )}
-
-              {loading && goldPrice && (
-                <div className="price-content">
-                  <div className="price-value">
-                    {formatPrice(goldPrice)}
-                  </div>
-                  <div className="price-unit">per Tola</div>
-                </div>
-              )}
-
               {!loading && error && !goldPrice && (
                 <div className="error-message">
-                  <i className="fas fa-exclamation-triangle"></i>
                   <p>{error}</p>
-                  <button className="retry-btn" onClick={fetchGoldPrice}>
-                    Try Again
-                  </button>
+                  <button className="retry-btn" onClick={fetchGoldPrice}>Try Again</button>
                 </div>
               )}
             </div>
           </div>
 
-          {/* 1 Gram Price Card */}
+          {/* 1 Gram */}
           <div className="price-card">
             <div className="price-header">
               <h2>1 Gram</h2>
-              <div className="price-badge">
-                <i className="fas fa-calculator"></i>
-                <span>Calculated</span>
-              </div>
             </div>
-
             <div className="price-display">
-              {prices && (
-                <div className="price-content">
-                  <div className="price-value">
-                    {formatPrice(prices.perGram)}
-                  </div>
-                  <div className="price-unit">per gram</div>
-                </div>
-              )}
-
-              {!prices && (
-                <div className="price-content">
-                  <div className="price-value">--</div>
-                  <div className="price-unit">per gram</div>
-                </div>
-              )}
+              <div className="price-content">
+                <div className="price-value">{prices ? formatPrice(prices.perGram) : '--'}</div>
+                <div className="price-unit">per gram</div>
+              </div>
             </div>
           </div>
 
-          {/* 10 gram Price Card */}
+          {/* 10 Gram */}
           <div className="price-card">
             <div className="price-header">
               <h2>10 Gram</h2>
-              <div className="price-badge">
-                <i className="fas fa-calculator"></i>
-                <span></span>
-              </div>
             </div>
-
             <div className="price-display">
-              {prices && (
-                <div className="price-content">
-                  <div className="price-value">
-                    {formatPrice(prices.per10Gram)}
-                  </div>
-                  <div className="price-unit">per 10 grams</div>
-                </div>
-              )}
-
-              {!prices && (
-                <div className="price-content">
-                  <div className="price-value">--</div>
-                  <div className="price-unit">per tola</div>
-                </div>
-              )}
+              <div className="price-content">
+                <div className="price-value">{prices ? formatPrice(prices.per10Gram) : '--'}</div>
+                <div className="price-unit">per 10 grams</div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="info-section">
-          <div className="conversion-info">
-            <h3><i className="fas fa-info-circle"></i> Price Conversion Information</h3>
-            <div className="conversion-grid">
-              <div className="conversion-item">
-                <strong>1 Tola</strong>
-                <span>= 11.6638 grams</span>
-              </div>
-              <div className="conversion-item">
-                <strong>1 Gram</strong>
-                <span>= 0.0858 tola</span>
-              </div>
-              <div className="conversion-item">
-                <strong>10 Grams</strong>
-                <span>= 0.858 tola</span>
-              </div>
-              <div className="conversion-item">
-                <strong>Pakistani Standard</strong>
-                <span>Tola is traditional unit</span>
-              </div>
-            </div>
-            
-            <div className="price-footer">
-              {lastUpdated && (
-                <div className="last-updated">
-                  <i className="fas fa-clock"></i>
-                  <span>Last Updated: {formatTime(lastUpdated)}</span>
-                </div>
-              )}
-              <div className="source-info">
-                <i className="fas fa-link"></i>
-                <span></span>
-              </div>
-            </div>
+        <div className="converter-section">
+          <h3><i className="fas fa-exchange-alt"></i> Gold Unit Converter</h3>
+          <p>Convert between tola, gram, and 10 grams instantly using live prices.</p>
+          <div className="converter-grid">
+            <input
+              type="number"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Enter value"
+            />
+            <select value={fromUnit} onChange={(e) => setFromUnit(e.target.value)}>
+              <option value="tola">Tola</option>
+              <option value="gram">Gram</option>
+              <option value="10gram">10 Grams</option>
+            </select>
+            <span>to</span>
+            <select value={toUnit} onChange={(e) => setToUnit(e.target.value)}>
+              <option value="tola">Tola</option>
+              <option value="gram">Gram</option>
+              <option value="10gram">10 Grams</option>
+            </select>
+            <button onClick={handleConvert}>Convert</button>
           </div>
+          {convertedValue && (
+            <div className="converter-result">
+              Result: <strong>{convertedValue}</strong> {toUnit}
+            </div>
+          )}
         </div>
 
         <div className="status-bar">
@@ -316,20 +235,34 @@ const mockDailyPrices = useMemo(() => [
             <span>{isOnline ? 'Connected' : 'Connecting...'}</span>
           </div>
         </div>
-        <div className="chart-section">
-  <h3><i className="fas fa-chart-line"></i> Gold Price (Last 7 Days)</h3>
-  <ResponsiveContainer width="100%" height={300}>
-    <LineChart data={mockDailyPrices}>
-      <CartesianGrid stroke="#444" strokeDasharray="3 3" />
-      <XAxis dataKey="date" stroke="#ccc" />
-      <YAxis stroke="#ccc" />
-      <Tooltip />
-      <Line type="monotone" dataKey="price" stroke="#ffd700" strokeWidth={2} dot={{ r: 3 }} isAnimationActive={false} />
-    </LineChart>
-  </ResponsiveContainer>
-</div>
-
       </main>
+            {/* Footer */}
+      <footer className="footer">
+        <div className="footer-content">
+          <div className="footer-left">
+            <h4>Gold Price Tracker</h4>
+            <p>Stay updated with the latest bullion rates in Pakistan.</p>
+          </div>
+
+          <div className="footer-center">
+            <a href="/" className="footer-link">Home</a>
+            <a href="#converter" className="footer-link">Converter</a>
+            <a href="#contact" className="footer-link">Contact</a>
+          </div>
+
+          <div className="footer-right">
+            <span className="footer-dev">Developed by <a href="https://codevente.com" target="_blank" rel="noopener noreferrer">Codevente</a></span>
+            <div className="footer-icons">
+              <a href="https://github.com/ahmed-ahsan2001" target="_blank" rel="noopener noreferrer"><i className="fab fa-github"></i></a>
+              <a href="https://linkedin.com/in/ahmed-ahsan2001" target="_blank" rel="noopener noreferrer"><i className="fab fa-linkedin"></i></a>
+            </div>
+          </div>
+        </div>
+        <div className="footer-bottom">
+          <p>© {new Date().getFullYear()} Gold Price Tracker — All Rights Reserved</p>
+        </div>
+      </footer>
+
     </div>
   );
 };

@@ -53,11 +53,11 @@ const About = () => {
             <div className="sources-grid">
               <div className="source-card">
                 <h3>Local Market</h3>
-                <p>Pakistani gold prices sourced from gold.pk, a trusted local precious metals dealer</p>
+                <p>Pakistani gold prices sourced from local market</p>
               </div>
               <div className="source-card">
                 <h3>International Market</h3>
-                <p>Global gold prices from API Ninjas, providing real-time COMEX and LBMA data</p>
+                <p>Global gold prices from external sources providing real-time data</p>
               </div>
             </div>
           </section>
@@ -85,22 +85,6 @@ const About = () => {
                 <h3>Students</h3>
                 <p>Learn about precious metals markets and pricing trends</p>
               </div>
-            </div>
-          </section>
-
-          <section className="about-section">
-            <h2><i className="fas fa-code"></i> Technology</h2>
-            <p>
-              Our platform is built using modern web technologies to ensure fast, reliable, and secure 
-              access to gold price information. We use React for the frontend, implement secure API 
-              connections, and follow best practices for data handling and user privacy.
-            </p>
-            <div className="tech-stack">
-              <span className="tech-item">React</span>
-              <span className="tech-item">JavaScript</span>
-              <span className="tech-item">REST APIs</span>
-              <span className="tech-item">Responsive Design</span>
-              <span className="tech-item">Real-time Data</span>
             </div>
           </section>
 
