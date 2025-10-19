@@ -1,16 +1,18 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 import './Navigation.css';
 
 const Navigation = () => {
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <nav className="navigation">
       <div className="nav-container">
         <Link to="/" className="nav-logo">
           <i className="fas fa-coins"></i>
-          <span>Gold Tracker</span>
+          <span>Gold & Silver Tracker</span>
         </Link>
         <div className="nav-links">
           <Link 
@@ -43,6 +45,14 @@ const Navigation = () => {
           >
             <i className="fas fa-shield-alt"></i> Privacy
           </Link>
+          <button 
+            className="theme-toggle" 
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+            title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+          >
+            <i className={`fas ${theme === 'light' ? 'fa-moon' : 'fa-sun'}`}></i>
+          </button>
         </div>
       </div>
     </nav>

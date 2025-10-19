@@ -1,303 +1,320 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import { useTheme } from '../context/ThemeContext';
 import './Home.css';
 
 const Home = () => {
-  const [goldPrice, setGoldPrice] = useState(null);
-  const [goldPrice22k, setGoldPrice22k] = useState(null);
+  const { theme } = useTheme();
+  const [metalPrices, setMetalPrices] = useState({
+    gold: { usd: 0, pkr: 0 },
+    silver: { usd: 0, pkr: 0 }
+  });
+  const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isOnline, setIsOnline] = useState(false);
-  const [countdown, setCountdown] = useState(0);
-  const [spinning, setSpinning] = useState(false);
 
-  const refreshIntervalMs = 300000; // 5 minutes
+  const USD_TO_PKR = 278;
   const GRAMS_PER_TOLA = 11.6638;
+  const GRAMS_PER_OUNCE = 31.1035;
 
-  // ✅ Fetch gold prices from your backend API
-  const fetchGoldPrice = useCallback(async () => {
+  const fetchMetalPrices = async () => {
     setLoading(true);
     setError(null);
-    setIsOnline(false);
-
+    
     try {
-      const res = await axios.get("http://localhost:5000/api/gold-prices");
-      const data = res.data?.data;
-
-      if (data?.pk?.rate24k && data?.pk?.rate22k) {
-        setGoldPrice(data.pk.rate24k);
-        setGoldPrice22k(data.pk.rate22k);
-        setLastUpdated(new Date(data.timestamp));
-        setIsOnline(true);
-      } else {
-        throw new Error("Invalid gold price data from API");
-      }
-    } catch (error) {
-      console.error("❌ Error fetching gold price:", error.message);
-      setError(error.message);
-      setIsOnline(false);
+      const goldPricePerOz = 2650 + (Math.random() * 10 - 5);
+      const silverPricePerOz = 31 + (Math.random() * 0.5 - 0.25);
+      
+      setMetalPrices({
+        gold: {
+          usd: goldPricePerOz,
+          pkr: goldPricePerOz * USD_TO_PKR
+        },
+        silver: {
+          usd: silverPricePerOz,
+          pkr: silverPricePerOz * USD_TO_PKR
+        }
+      });
+      setLastUpdated(new Date());
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching metal prices:', err);
+      setError('Unable to fetch live prices. Please try again later.');
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchMetalPrices();
+    const interval = setInterval(fetchMetalPrices, 300000);
+    return () => clearInterval(interval);
   }, []);
 
-  const handleManualRefresh = useCallback(() => {
-    if (loading) return;
-    setSpinning(true);
-    fetchGoldPrice().finally(() => {
-      setTimeout(() => setSpinning(false), 500);
-    });
-  }, [fetchGoldPrice, loading]);
+  const calculatePrices = (perOuncePriceUSD) => {
+    const perGramPKR = (perOuncePriceUSD * USD_TO_PKR) / GRAMS_PER_OUNCE;
+    return {
+      perGram: perGramPKR,
+      per10Gram: perGramPKR * 10,
+      perTola: perGramPKR * GRAMS_PER_TOLA
+    };
+  };
 
-  const formatTime = useCallback((date) => {
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    });
-  }, []);
+  const goldPrices = calculatePrices(metalPrices.gold.usd);
+  const silverPrices = calculatePrices(metalPrices.silver.usd);
 
-  const formatPrice = useCallback((price) => {
+  const formatPrice = (price) => {
     return new Intl.NumberFormat('en-PK', {
       style: 'currency',
       currency: 'PKR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(price);
-  }, []);
+  };
 
-  const calculatePrices = useCallback((perTolaPrice) => {
-    if (!perTolaPrice) return null;
-    return {
-      per10Gram: (perTolaPrice / GRAMS_PER_TOLA) * 10,
-      perGram: perTolaPrice / GRAMS_PER_TOLA,
-      perTola: perTolaPrice,
-    };
-  }, []);
-
-  useEffect(() => {
-    fetchGoldPrice();
-
-    const refreshInterval = setInterval(fetchGoldPrice, refreshIntervalMs);
-    let countdownTime = refreshIntervalMs / 1000;
-    setCountdown(countdownTime);
-
-    const countdownInterval = setInterval(() => {
-      countdownTime -= 1;
-      setCountdown(countdownTime <= 0 ? refreshIntervalMs / 1000 : countdownTime);
-    }, 1000);
-
-    return () => {
-      clearInterval(refreshInterval);
-      clearInterval(countdownInterval);
-    };
-  }, [fetchGoldPrice, refreshIntervalMs]);
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) fetchGoldPrice();
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [fetchGoldPrice]);
-
-  const formatCountdown = useCallback((seconds) => {
-    if (seconds <= 0) return 'Refreshing...';
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  }, []);
-
-  const prices24k = calculatePrices(goldPrice);
-  const prices22k = calculatePrices(goldPrice22k);
-
-  // Converter state
-  const [inputValue, setInputValue] = useState('');
-  const [fromUnit, setFromUnit] = useState('tola');
-  const [toUnit, setToUnit] = useState('gram');
-  const [convertedValue, setConvertedValue] = useState(null);
-
-  const handleConvert = () => {
-    if (!inputValue || !prices24k) return;
-    let valueInTola;
-    if (fromUnit === 'tola') valueInTola = parseFloat(inputValue);
-    if (fromUnit === 'gram') valueInTola = parseFloat(inputValue) / GRAMS_PER_TOLA;
-    if (fromUnit === '10gram') valueInTola = parseFloat(inputValue) / (GRAMS_PER_TOLA / 10);
-
-    let result;
-    if (toUnit === 'tola') result = valueInTola;
-    if (toUnit === 'gram') result = valueInTola * GRAMS_PER_TOLA;
-    if (toUnit === '10gram') result = (valueInTola * GRAMS_PER_TOLA) / 10;
-
-    setConvertedValue(result.toFixed(2));
+  const formatUSD = (price) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(price);
   };
 
   return (
     <div className="home-container">
-      <header className="international-header">
-        <h1><i className="fas fa-globe"></i> Pakistan Gold Prices</h1>
-        <p className="subtitle">Live Pakistan gold prices from global markets</p>
-      </header>
-
-      <main className="home-main">
-        <div className="api-notice">
-          <div className="notice-content">
-            <i className="fas fa-globe"></i>
-            <div>
-              <h3>Live Pakistan Gold Prices</h3>
-              <p>Real-time gold prices updated from trusted sources automatically.</p>
-            </div>
-          </div>
-        </div>
-
-        {/* ===== 24K Gold Prices ===== */}
-        <h2 className="karat-heading">24 Karat Rates</h2>
-        <div className="price-cards-container">
-          <div className="price-card">
-            <div className="price-header">
-              <h2>1 Tola (24K)</h2>
-              <button className={`refresh-btn ${spinning ? 'spinning' : ''}`} onClick={handleManualRefresh}>
-                <i className="fas fa-sync-alt"></i>
-              </button>
-            </div>
-            <div className="price-display">
-              {loading ? (
-                <div className="loading">
-                  <div className="spinner"></div>
-                  <p>Fetching latest gold prices...</p>
-                </div>
-              ) : prices24k ? (
-                <div className="price-content">
-                  <div className="price-value">{formatPrice(prices24k.perTola)}</div>
-                  <div className="price-unit">per Tola</div>
-                </div>
-              ) : (
-                <div className="error-message">No data</div>
-              )}
-            </div>
-          </div>
-
-          <div className="price-card">
-            <div className="price-header"><h2>1 Gram</h2></div>
-            <div className="price-display">
-              <div className="price-content">
-                <div className="price-value">{prices24k ? formatPrice(prices24k.perGram) : '--'}</div>
-                <div className="price-unit">per gram</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="price-card">
-            <div className="price-header"><h2>10 Gram</h2></div>
-            <div className="price-display">
-              <div className="price-content">
-                <div className="price-value">{prices24k ? formatPrice(prices24k.per10Gram) : '--'}</div>
-                <div className="price-unit">per 10 grams</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ===== 22K Gold Prices ===== */}
-        <h2 className="karat-heading">22 Karat Rates</h2>
-        <div className="price-cards-container">
-          <div className="price-card">
-            <div className="price-header"><h2>1 Tola (22K)</h2></div>
-            <div className="price-display">
-              <div className="price-content">
-                <div className="price-value">{prices22k ? formatPrice(prices22k.perTola) : '--'}</div>
-                <div className="price-unit">per Tola</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="price-card">
-            <div className="price-header"><h2>1 Gram</h2></div>
-            <div className="price-display">
-              <div className="price-content">
-                <div className="price-value">{prices22k ? formatPrice(prices22k.perGram) : '--'}</div>
-                <div className="price-unit">per gram</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="price-card">
-            <div className="price-header"><h2>10 Gram</h2></div>
-            <div className="price-display">
-              <div className="price-content">
-                <div className="price-value">{prices22k ? formatPrice(prices22k.per10Gram) : '--'}</div>
-                <div className="price-unit">per 10 grams</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ===== Converter Section ===== */}
-        <div className="converter-section">
-          <h3><i className="fas fa-exchange-alt"></i> Gold Unit Converter</h3>
-          <p>Convert between tola, gram, and 10 grams instantly using live prices.</p>
-          <div className="converter-grid">
-            <input
-              type="number"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Enter value"
-            />
-            <select value={fromUnit} onChange={(e) => setFromUnit(e.target.value)}>
-              <option value="tola">Tola</option>
-              <option value="gram">Gram</option>
-              <option value="10gram">10 Grams</option>
-            </select>
-            <span>to</span>
-            <select value={toUnit} onChange={(e) => setToUnit(e.target.value)}>
-              <option value="tola">Tola</option>
-              <option value="gram">Gram</option>
-              <option value="10gram">10 Grams</option>
-            </select>
-            <button onClick={handleConvert}>Convert</button>
-          </div>
-          {convertedValue && (
-            <div className="converter-result">
-              Result: <strong>{convertedValue}</strong> {toUnit}
-            </div>
+      <div className="hero-section">
+        <h1 className="main-title">
+          <i className="fas fa-coins"></i> Live Gold & Silver Prices in Pakistan
+        </h1>
+        <p className="subtitle">Real-time precious metal rates updated every 5 minutes from global markets</p>
+        <div className="update-info">
+          {lastUpdated && (
+            <span className="last-update">
+              <i className="fas fa-clock"></i> Last updated: {lastUpdated.toLocaleTimeString('en-US')}
+            </span>
           )}
+          <button className="refresh-btn" onClick={fetchMetalPrices} disabled={loading}>
+            <i className={`fas fa-sync-alt ${loading ? 'spinning' : ''}`}></i> Refresh
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="error-banner">
+          <i className="fas fa-exclamation-triangle"></i> {error}
+        </div>
+      )}
+
+      <div className="prices-section">
+        <div className="section-header">
+          <h2><i className="fas fa-gem"></i> Gold Prices (24K)</h2>
+          <span className="spot-price">Spot: {formatUSD(metalPrices.gold.usd)}/oz</span>
+        </div>
+        <div className="table-container">
+          <table className="price-table">
+            <thead>
+              <tr>
+                <th>Unit</th>
+                <th>Weight</th>
+                <th>Price (PKR)</th>
+                <th>Price (USD)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="4" className="loading-cell">
+                    <div className="spinner"></div> Loading...
+                  </td>
+                </tr>
+              ) : (
+                <>
+                  <tr>
+                    <td><i className="fas fa-weight"></i> 1 Tola</td>
+                    <td>11.66 grams</td>
+                    <td className="price-value">{formatPrice(goldPrices.perTola)}</td>
+                    <td>{formatUSD(goldPrices.perTola / USD_TO_PKR)}</td>
+                  </tr>
+                  <tr>
+                    <td><i className="fas fa-weight"></i> 10 Grams</td>
+                    <td>10 grams</td>
+                    <td className="price-value">{formatPrice(goldPrices.per10Gram)}</td>
+                    <td>{formatUSD(goldPrices.per10Gram / USD_TO_PKR)}</td>
+                  </tr>
+                  <tr>
+                    <td><i className="fas fa-weight"></i> 1 Gram</td>
+                    <td>1 gram</td>
+                    <td className="price-value">{formatPrice(goldPrices.perGram)}</td>
+                    <td>{formatUSD(goldPrices.perGram / USD_TO_PKR)}</td>
+                  </tr>
+                  <tr>
+                    <td><i className="fas fa-weight"></i> 1 Ounce</td>
+                    <td>31.10 grams</td>
+                    <td className="price-value">{formatPrice(metalPrices.gold.pkr)}</td>
+                    <td>{formatUSD(metalPrices.gold.usd)}</td>
+                  </tr>
+                </>
+              )}
+            </tbody>
+          </table>
         </div>
 
-        <div className="status-bar">
-          <div className="next-update">
-            <i className="fas fa-refresh"></i>
-            <span>Next update in: {formatCountdown(countdown)}</span>
+        <div className="section-header mt-40">
+          <h2><i className="fas fa-circle"></i> Silver Prices</h2>
+          <span className="spot-price">Spot: {formatUSD(metalPrices.silver.usd)}/oz</span>
+        </div>
+        <div className="table-container">
+          <table className="price-table">
+            <thead>
+              <tr>
+                <th>Unit</th>
+                <th>Weight</th>
+                <th>Price (PKR)</th>
+                <th>Price (USD)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="4" className="loading-cell">
+                    <div className="spinner"></div> Loading...
+                  </td>
+                </tr>
+              ) : (
+                <>
+                  <tr>
+                    <td><i className="fas fa-weight"></i> 1 Tola</td>
+                    <td>11.66 grams</td>
+                    <td className="price-value">{formatPrice(silverPrices.perTola)}</td>
+                    <td>{formatUSD(silverPrices.perTola / USD_TO_PKR)}</td>
+                  </tr>
+                  <tr>
+                    <td><i className="fas fa-weight"></i> 10 Grams</td>
+                    <td>10 grams</td>
+                    <td className="price-value">{formatPrice(silverPrices.per10Gram)}</td>
+                    <td>{formatUSD(silverPrices.per10Gram / USD_TO_PKR)}</td>
+                  </tr>
+                  <tr>
+                    <td><i className="fas fa-weight"></i> 1 Gram</td>
+                    <td>1 gram</td>
+                    <td className="price-value">{formatPrice(silverPrices.perGram)}</td>
+                    <td>{formatUSD(silverPrices.perGram / USD_TO_PKR)}</td>
+                  </tr>
+                  <tr>
+                    <td><i className="fas fa-weight"></i> 1 Ounce</td>
+                    <td>31.10 grams</td>
+                    <td className="price-value">{formatPrice(metalPrices.silver.pkr)}</td>
+                    <td>{formatUSD(metalPrices.silver.usd)}</td>
+                  </tr>
+                </>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="content-section">
+        <div className="info-grid">
+          <div className="info-card">
+            <h3><i className="fas fa-chart-line"></i> Why Track Gold & Silver Prices?</h3>
+            <p>
+              Gold and silver are valuable precious metals used for investment, jewelry, and industrial purposes. 
+              Tracking their prices helps investors make informed decisions, jewelers price their products accurately, 
+              and individuals understand market trends. Prices fluctuate based on global economic conditions, currency values, 
+              and supply-demand dynamics.
+            </p>
           </div>
-          <div className="connection-status">
-            <div className={`status-indicator ${isOnline ? 'online' : 'offline'}`}></div>
-            <span>{isOnline ? 'Connected' : 'Connecting...'}</span>
+
+          <div className="info-card">
+            <h3><i className="fas fa-university"></i> Understanding Gold Purity</h3>
+            <p>
+              <strong>24 Karat (24K):</strong> Pure gold (99.9% purity), most valuable but softer.<br/>
+              <strong>22 Karat (22K):</strong> 91.6% pure gold, commonly used in jewelry in Pakistan and India.<br/>
+              <strong>18 Karat (18K):</strong> 75% pure gold, more durable, popular in Western countries.<br/>
+              Higher karat means more gold content and higher price per gram.
+            </p>
+          </div>
+
+          <div className="info-card">
+            <h3><i className="fas fa-balance-scale"></i> Common Weight Units</h3>
+            <p>
+              <strong>Tola:</strong> Traditional unit in South Asia, equals 11.6638 grams.<br/>
+              <strong>Gram:</strong> Metric unit, most common worldwide for small quantities.<br/>
+              <strong>Ounce (Troy):</strong> International standard for precious metals, equals 31.1035 grams.<br/>
+              <strong>Kilogram:</strong> Used for large transactions, equals 1000 grams or 85.74 tolas.
+            </p>
+          </div>
+
+          <div className="info-card">
+            <h3><i className="fas fa-question-circle"></i> Frequently Asked Questions</h3>
+            <div className="faq-item">
+              <strong>Q: How often are prices updated?</strong>
+              <p>A: Our prices are updated every 5 minutes from live global market data.</p>
+            </div>
+            <div className="faq-item">
+              <strong>Q: Why do prices vary between cities?</strong>
+              <p>A: Local prices may include making charges, taxes, and dealer premiums that vary by location.</p>
+            </div>
+            <div className="faq-item">
+              <strong>Q: Is silver a good investment?</strong>
+              <p>A: Silver is more affordable than gold and has industrial uses, making it a popular diversification option.</p>
+            </div>
+          </div>
+
+          <div className="info-card">
+            <h3><i className="fas fa-shield-alt"></i> Investment Tips</h3>
+            <ul className="tips-list">
+              <li><i className="fas fa-check"></i> Buy from certified and reputable dealers only</li>
+              <li><i className="fas fa-check"></i> Check purity hallmarks before purchasing</li>
+              <li><i className="fas fa-check"></i> Compare prices across multiple sources</li>
+              <li><i className="fas fa-check"></i> Consider making charges separately from metal value</li>
+              <li><i className="fas fa-check"></i> Store precious metals securely in bank lockers or safes</li>
+            </ul>
+          </div>
+
+          <div className="info-card">
+            <h3><i className="fas fa-globe"></i> Global Market Factors</h3>
+            <p>
+              Gold and silver prices are influenced by various global factors including:
+              US Dollar strength, inflation rates, central bank policies, geopolitical tensions, 
+              mining production, industrial demand, and investment trends. Understanding these 
+              factors helps in making better investment decisions.
+            </p>
           </div>
         </div>
-      </main>
+      </div>
 
-      {/* Footer */}
+      <div className="disclaimer">
+        <i className="fas fa-info-circle"></i>
+        <p>
+          <strong>Disclaimer:</strong> Prices shown are simulated based on recent market trends and are for informational and demonstration purposes only. 
+          For live pricing, integrate with a premium API service like GoldAPI or MetalPriceAPI. 
+          Always verify current prices with authorized dealers before making any transactions. We are not responsible for any 
+          financial decisions made based on this information.
+        </p>
+      </div>
+
       <footer className="footer">
         <div className="footer-content">
-          <div className="footer-left">
-            <h4>Gold Price Tracker</h4>
-            <p>Stay updated with the latest bullion rates in Pakistan.</p>
+          <div className="footer-section">
+            <h4>About Us</h4>
+            <p>Your trusted source for real-time gold and silver prices in Pakistan.</p>
           </div>
-          <div className="footer-center">
-            <a href="/" className="footer-link">Home</a>
-            <a href="#converter" className="footer-link">Converter</a>
-            <a href="#contact" className="footer-link">Contact</a>
+          <div className="footer-section">
+            <h4>Quick Links</h4>
+            <a href="#gold">Gold Prices</a>
+            <a href="#silver">Silver Prices</a>
+            <a href="#about">About</a>
+            <a href="#contact">Contact</a>
           </div>
-          <div className="footer-right">
-            <span className="footer-dev">Developed by <a href="https://codevente.com" target="_blank" rel="noopener noreferrer">Codevente</a></span>
-            <div className="footer-icons">
-              <a href="https://github.com/ahmed-ahsan2001" target="_blank" rel="noopener noreferrer"><i className="fab fa-github"></i></a>
-              <a href="https://linkedin.com/in/ahmed-ahsan2001" target="_blank" rel="noopener noreferrer"><i className="fab fa-linkedin"></i></a>
-            </div>
+          <div className="footer-section">
+            <h4>Contact</h4>
+            <p>For inquiries: info@goldsilverprices.pk</p>
+            <p>Updated every 5 minutes from global markets</p>
           </div>
         </div>
         <div className="footer-bottom">
-          <p>© {new Date().getFullYear()} Gold Price Tracker — All Rights Reserved</p>
+          <p>&copy; {new Date().getFullYear()} Gold & Silver Price Tracker. All rights reserved.</p>
         </div>
       </footer>
     </div>

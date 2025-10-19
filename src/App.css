@@ -1,87 +1,81 @@
-/* App.css - Main App Styles */
+/* App.css - Main App Styles with Theme Support */
 
 .app {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  min-height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
 }
 
 /* Global smooth scrolling */
 html {
-    scroll-behavior: smooth;
+  scroll-behavior: smooth;
 }
+
 html, body {
   margin: 0;
   padding: 0;
-  background-color: #1a1a2e; /* same fallback */
-}
-
-/* Global dark theme adjustments */
-body {
-    margin: 0;
-    padding: 0;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    color: #e2e8f0;
-    overflow-x: hidden;
+  background-color: var(--bg-primary);
 }
 
 /* Common animations */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideIn {
-    from { transform: translateX(-100%); }
-    to { transform: translateX(0); }
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
 }
 
 @keyframes bounce {
-    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-    40% { transform: translateY(-10px); }
-    60% { transform: translateY(-5px); }
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-10px); }
+  60% { transform: translateY(-5px); }
 }
 
 /* Apply fade-in animation to main content */
 .app > * {
-    animation: fadeIn 0.6s ease-out;
+  animation: fadeIn 0.6s ease-out;
 }
 
 /* Common utility classes */
 .text-gold {
-    color: #ffd700;
+  color: #ffd700;
 }
 
 .text-muted {
-    color: #9ca3af;
+  color: var(--text-secondary);
 }
 
 .shadow-gold {
-    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
 }
 
 .border-gold {
-    border: 2px solid rgba(255, 215, 0, 0.3);
+  border: 2px solid rgba(255, 215, 0, 0.3);
 }
 
 .bg-dark-gradient {
-    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  background: var(--hero-gradient);
 }
 
 /* Global responsive adjustments */
 @media (max-width: 1024px) {
-    .app {
-        padding: 0 10px;
-    }
+  .app {
+    padding: 0 10px;
+  }
 }
 
 @media (max-width: 768px) {
-    body {
-        font-size: 14px;
-    }
+  body {
+    font-size: 14px;
+  }
 }
 
 @media (max-width: 480px) {
-    body {
-        font-size: 13px;
-    }
+  body {
+    font-size: 13px;
+  }
 }
