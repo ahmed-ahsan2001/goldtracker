@@ -50,3 +50,30 @@ Preferred communication style: Simple, everyday language.
 ### External Resources
 -   **Google Fonts**: Inter font family for typography.
 -   **Font Awesome**: Icons for UI elements (via CDN).
+## Recent Changes
+
+### October 20, 2025
+- **✅ Light Mode Enhancement**: Significantly improved light mode colors and styling
+  - Added vibrant golden gradient to hero section instead of subtle gray
+  - Enhanced text contrast with darker, more readable colors (#0f172a for headings)
+  - Improved button styling with better visibility (golden yellow #eab308 with white text)
+  - Enhanced table row hover with subtle golden highlight (#fef3c7)
+  - Updated all light mode CSS variables for better visibility and professionalism
+  - **Consistent Styling Across All Pages**: Extended golden theme to International, About, Contact, and Privacy pages
+  - Added missing CSS variables (--primary-hover, --card-background, --shadow, --border-color, --hover-bg, --input-bg, --error-color) for both light and dark themes
+- **✅ 22K Gold Prices**: Added complete 22K gold price table on home page
+  - Shows 91.67% pure gold prices (22/24 purity calculation)
+  - Displays prices for all units: 1 Tola, 10 Grams, 1 Gram, 1 Ounce
+  - Both PKR and USD pricing included
+  - Positioned between 24K gold and silver sections
+  - Uses same professional table layout as 24K prices
+- **✅ FAQ Section Improvement**: Enhanced FAQ alignment and spacing on home page
+  - Added proper spacing and borders between FAQ items
+  - Improved readability with better line-height
+  - Consistent styling with rest of the page
+- **✅ Footer on All Pages**: Added professional footer to all pages
+  - Footer now appears on Home, International, About, Contact, and Privacy pages
+  - Consistent footer design across all pages with three sections: About Us, Quick Links, Contact
+  - Includes copyright notice with dynamic year
+  - Footer styling matches the light/dark theme system
+- **✅ Code Quality**: Enhanced calculatePrices function to accept purity parameter for flexible calculations
