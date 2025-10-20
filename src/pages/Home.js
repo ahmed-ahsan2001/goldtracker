@@ -50,8 +50,8 @@ const Home = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const calculatePrices = (perOuncePriceUSD) => {
-    const perGramPKR = (perOuncePriceUSD * USD_TO_PKR) / GRAMS_PER_OUNCE;
+  const calculatePrices = (perOuncePriceUSD, purity = 1.0) => {
+    const perGramPKR = (perOuncePriceUSD * USD_TO_PKR * purity) / GRAMS_PER_OUNCE;
     return {
       perGram: perGramPKR,
       per10Gram: perGramPKR * 10,
@@ -59,7 +59,8 @@ const Home = () => {
     };
   };
 
-  const goldPrices = calculatePrices(metalPrices.gold.usd);
+  const goldPrices24K = calculatePrices(metalPrices.gold.usd);
+  const goldPrices22K = calculatePrices(metalPrices.gold.usd, 22/24);
   const silverPrices = calculatePrices(metalPrices.silver.usd);
 
   const formatPrice = (price) => {
@@ -132,26 +133,79 @@ const Home = () => {
                   <tr>
                     <td><i className="fas fa-weight"></i> 1 Tola</td>
                     <td>11.66 grams</td>
-                    <td className="price-value">{formatPrice(goldPrices.perTola)}</td>
-                    <td>{formatUSD(goldPrices.perTola / USD_TO_PKR)}</td>
+                    <td className="price-value">{formatPrice(goldPrices24K.perTola)}</td>
+                    <td>{formatUSD(goldPrices24K.perTola / USD_TO_PKR)}</td>
                   </tr>
                   <tr>
                     <td><i className="fas fa-weight"></i> 10 Grams</td>
                     <td>10 grams</td>
-                    <td className="price-value">{formatPrice(goldPrices.per10Gram)}</td>
-                    <td>{formatUSD(goldPrices.per10Gram / USD_TO_PKR)}</td>
+                    <td className="price-value">{formatPrice(goldPrices24K.per10Gram)}</td>
+                    <td>{formatUSD(goldPrices24K.per10Gram / USD_TO_PKR)}</td>
                   </tr>
                   <tr>
                     <td><i className="fas fa-weight"></i> 1 Gram</td>
                     <td>1 gram</td>
-                    <td className="price-value">{formatPrice(goldPrices.perGram)}</td>
-                    <td>{formatUSD(goldPrices.perGram / USD_TO_PKR)}</td>
+                    <td className="price-value">{formatPrice(goldPrices24K.perGram)}</td>
+                    <td>{formatUSD(goldPrices24K.perGram / USD_TO_PKR)}</td>
                   </tr>
                   <tr>
                     <td><i className="fas fa-weight"></i> 1 Ounce</td>
                     <td>31.10 grams</td>
                     <td className="price-value">{formatPrice(metalPrices.gold.pkr)}</td>
                     <td>{formatUSD(metalPrices.gold.usd)}</td>
+                  </tr>
+                </>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="section-header mt-40">
+          <h2><i className="fas fa-gem"></i> Gold Prices (22K)</h2>
+          <span className="spot-price">91.67% Pure</span>
+        </div>
+        <div className="table-container">
+          <table className="price-table">
+            <thead>
+              <tr>
+                <th>Unit</th>
+                <th>Weight</th>
+                <th>Price (PKR)</th>
+                <th>Price (USD)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="4" className="loading-cell">
+                    <div className="spinner"></div> Loading...
+                  </td>
+                </tr>
+              ) : (
+                <>
+                  <tr>
+                    <td><i className="fas fa-weight"></i> 1 Tola</td>
+                    <td>11.66 grams</td>
+                    <td className="price-value">{formatPrice(goldPrices22K.perTola)}</td>
+                    <td>{formatUSD(goldPrices22K.perTola / USD_TO_PKR)}</td>
+                  </tr>
+                  <tr>
+                    <td><i className="fas fa-weight"></i> 10 Grams</td>
+                    <td>10 grams</td>
+                    <td className="price-value">{formatPrice(goldPrices22K.per10Gram)}</td>
+                    <td>{formatUSD(goldPrices22K.per10Gram / USD_TO_PKR)}</td>
+                  </tr>
+                  <tr>
+                    <td><i className="fas fa-weight"></i> 1 Gram</td>
+                    <td>1 gram</td>
+                    <td className="price-value">{formatPrice(goldPrices22K.perGram)}</td>
+                    <td>{formatUSD(goldPrices22K.perGram / USD_TO_PKR)}</td>
+                  </tr>
+                  <tr>
+                    <td><i className="fas fa-weight"></i> 1 Ounce</td>
+                    <td>31.10 grams</td>
+                    <td className="price-value">{formatPrice(metalPrices.gold.pkr * (22/24))}</td>
+                    <td>{formatUSD(metalPrices.gold.usd * (22/24))}</td>
                   </tr>
                 </>
               )}

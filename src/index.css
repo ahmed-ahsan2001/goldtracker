@@ -8,49 +8,49 @@
 
 /* Theme Variables - Light Mode (Default) */
 [data-theme="light"] {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f7fafc;
-  --text-primary: #1a202c;
-  --text-secondary: #4a5568;
-  --heading-color: #2d3748;
-  --primary-color: #2d3748;
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --heading-color: #0f172a;
+  --primary-color: #0f172a;
   
-  --hero-gradient: linear-gradient(135deg, #edf2f7 0%, #e2e8f0 100%);
+  --hero-gradient: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fcd34d 100%);
   --card-bg: #ffffff;
-  --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   
   --table-bg: #ffffff;
-  --table-header-bg: #f7fafc;
-  --table-header-text: #2d3748;
+  --table-header-bg: #f8fafc;
+  --table-header-text: #0f172a;
   --table-border: #e2e8f0;
-  --table-row-hover: #f7fafc;
+  --table-row-hover: #fef3c7;
   
-  --button-bg: #ffd700;
-  --button-text: #1a202c;
-  --button-hover: #ffed4e;
-  --button-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
+  --button-bg: #eab308;
+  --button-text: #ffffff;
+  --button-hover: #ca8a04;
+  --button-shadow: 0 4px 6px rgba(234, 179, 8, 0.4);
   
-  --spot-bg: #fff3cd;
-  --spot-text: #856404;
+  --spot-bg: #fef3c7;
+  --spot-text: #854d0e;
   
-  --price-color: #d97706;
-  --icon-color: #6b7280;
-  --accent-color: #ffd700;
+  --price-color: #ea580c;
+  --icon-color: #64748b;
+  --accent-color: #eab308;
   
   --spinner-border: rgba(0, 0, 0, 0.1);
-  --spinner-top: #ffd700;
+  --spinner-top: #eab308;
   
-  --disclaimer-bg: #fff3cd;
-  --disclaimer-border: #ffc107;
-  --disclaimer-icon: #856404;
+  --disclaimer-bg: #fef3c7;
+  --disclaimer-border: #fbbf24;
+  --disclaimer-icon: #92400e;
   
-  --footer-bg: #f7fafc;
+  --footer-bg: #f1f5f9;
   
   --nav-bg: #ffffff;
-  --nav-border: #e2e8f0;
-  --nav-link-color: #4a5568;
-  --nav-link-hover: #1a202c;
-  --nav-link-active-bg: #edf2f7;
+  --nav-border: #fbbf24;
+  --nav-link-color: #475569;
+  --nav-link-hover: #0f172a;
+  --nav-link-active-bg: #fef3c7;
 }
 
 /* Theme Variables - Dark Mode */
