@@ -219,6 +219,30 @@ const International = () => {
           dealers before making any investment decisions.
         </p>
       </div>
+
+      <footer className="footer">
+        <div className="footer-content">
+          <div className="footer-section">
+            <h4>About Us</h4>
+            <p>Your trusted source for real-time gold and silver prices in Pakistan.</p>
+          </div>
+          <div className="footer-section">
+            <h4>Quick Links</h4>
+            <a href="#gold">Gold Prices</a>
+            <a href="#silver">Silver Prices</a>
+            <a href="#about">About</a>
+            <a href="#contact">Contact</a>
+          </div>
+          <div className="footer-section">
+            <h4>Contact</h4>
+            <p>For inquiries: info@goldsilverprices.pk</p>
+            <p>Updated every 5 minutes from global markets</p>
+          </div>
+        </div>
+        <div className="footer-bottom">
+          <p>&copy; {new Date().getFullYear()} Gold & Silver Price Tracker. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 };
