@@ -32,9 +32,10 @@ Preferred communication style: Simple, everyday language.
 ### 1. Price Display System
 - **Table Layout**: Professional tables showing prices in rows for easy reading
 - **Multi-Unit Display**: Shows prices for 1 tola, 10 grams, 1 gram, and 1 ounce
-- **Dual Metals**: Both gold (24K) and silver prices
+- **Multiple Gold Purities**: Both 24K (99.9% pure) and 22K (91.67% pure) gold prices
+- **Dual Metals**: Both gold and silver prices displayed
 - **Dual Currency**: Displays prices in both PKR (Pakistani Rupees) and USD
-- **Calculated Prices**: Automatic conversion between different units
+- **Calculated Prices**: Automatic conversion between different units and purities
 - **Spot Price Display**: Shows current spot price per ounce
 - **Loading States**: Spinner animation during data fetching
 - **Last Updated**: Shows timestamp of last price update
@@ -196,9 +197,24 @@ See `API_INTEGRATION_GUIDE.md` for detailed instructions on integrating live pre
 - GoldAPI (goldapi.io) - Free tier: 100 requests/month
 - MetalPriceAPI (metalpriceapi.com) - Free tier: 500 requests/month
 
-## Recent Changes (October 19, 2025)
+## Recent Changes
 
-### Major Redesign
+### October 20, 2025
+- **✅ Light Mode Enhancement**: Significantly improved light mode colors and styling
+  - Added vibrant golden gradient to hero section instead of subtle gray
+  - Enhanced text contrast with darker, more readable colors (#0f172a for headings)
+  - Improved button styling with better visibility (golden yellow #eab308 with white text)
+  - Enhanced table row hover with subtle golden highlight (#fef3c7)
+  - Updated all light mode CSS variables for better visibility and professionalism
+- **✅ 22K Gold Prices**: Added complete 22K gold price table on home page
+  - Shows 91.67% pure gold prices (22/24 purity calculation)
+  - Displays prices for all units: 1 Tola, 10 Grams, 1 Gram, 1 Ounce
+  - Both PKR and USD pricing included
+  - Positioned between 24K gold and silver sections
+  - Uses same professional table layout as 24K prices
+- **✅ Code Quality**: Enhanced calculatePrices function to accept purity parameter for flexible calculations
+
+### October 19, 2025 - Major Redesign
 - **✅ Professional Table Layout**: Replaced card-based boxes with clean, professional tables
 - **✅ Light/Dark Theme**: Implemented full theme system with toggle button
 - **✅ Silver Prices**: Added silver prices alongside gold prices
@@ -212,8 +228,6 @@ See `API_INTEGRATION_GUIDE.md` for detailed instructions on integrating live pre
 - **✅ Spot Prices**: Displays spot price per ounce for both metals
 - **✅ Footer Enhancement**: Professional footer with multiple sections
 - **✅ Disclaimer**: Clear disclaimer about price accuracy
-
-### Code Improvements
 - **Theme Persistence**: User's theme preference saved in localStorage
 - **Type Safety**: Proper prop validation and state management
 - **Performance**: Optimized re-renders with proper React hooks usage
