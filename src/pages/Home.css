@@ -251,18 +251,28 @@
 }
 
 .faq-item {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--table-border);
+}
+
+.faq-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
 .faq-item strong {
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
   color: var(--heading-color);
+  font-size: 1.05rem;
 }
 
 .faq-item p {
   margin: 0;
-  padding-left: 15px;
+  padding-left: 0;
+  line-height: 1.6;
 }
 
 .tips-list {
