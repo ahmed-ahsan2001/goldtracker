@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import './Home.css';
+import axios from "axios";
 
 const Home = () => {
   const { theme } = useTheme();
@@ -16,34 +17,46 @@ const Home = () => {
   const GRAMS_PER_TOLA = 11.6638;
   const GRAMS_PER_OUNCE = 31.1035;
 
-  const fetchMetalPrices = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const goldPricePerOz = 2650 + (Math.random() * 10 - 5);
-      const silverPricePerOz = 31 + (Math.random() * 0.5 - 0.25);
-      
-      setMetalPrices({
-        gold: {
-          usd: goldPricePerOz,
-          pkr: goldPricePerOz * USD_TO_PKR
-        },
-        silver: {
-          usd: silverPricePerOz,
-          pkr: silverPricePerOz * USD_TO_PKR
-        }
-      });
-      setLastUpdated(new Date());
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching metal prices:', err);
-      setError('Unable to fetch live prices. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
-  };
+const fetchMetalPrices = async () => {
+  setLoading(true);
+  setError(null);
 
+  const apiURL = "https://api-zqweriy4ka-uc.a.run.app";
+
+  try {
+    const [pkRes, intlRes] = await Promise.allSettled([
+      axios.get(`${apiURL}/api/gold-price/pk`),
+      axios.get(`${apiURL}/api/gold-price/intl`),
+    ]);
+
+    const pk =
+      pkRes.status === "fulfilled" && pkRes.value.data.success
+        ? pkRes.value.data.data
+        : null;
+    const intl =
+      intlRes.status === "fulfilled" && intlRes.value.data.success
+        ? intlRes.value.data.data
+        : null;
+
+    if (!pk && !intl) throw new Error("Failed to fetch prices");
+
+    setMetalPrices({
+      gold: {
+        usd: intl || 0,
+        pkr24k: pk?.rate24k || 0,
+        pkr22k: pk?.rate22k || 0,
+      },
+      silver: { usd: 0, pkr: 0 },
+    });
+
+    setLastUpdated(new Date());
+  } catch (err) {
+    console.error("Error fetching metal prices:", err);
+    setError("Unable to fetch live prices. Please try again later.");
+  } finally {
+    setLoading(false);
+  }
+};
   useEffect(() => {
     fetchMetalPrices();
     const interval = setInterval(fetchMetalPrices, 300000);
@@ -59,8 +72,19 @@ const Home = () => {
     };
   };
 
-  const goldPrices24K = calculatePrices(metalPrices.gold.usd);
-  const goldPrices22K = calculatePrices(metalPrices.gold.usd, 22/24);
+const goldPrices24K = {
+  perTola: metalPrices.gold.pkr24k,
+  per10Gram: (metalPrices.gold.pkr24k / GRAMS_PER_TOLA) * 10,
+  perGram: metalPrices.gold.pkr24k / GRAMS_PER_TOLA,
+  perOunce: metalPrices.gold.pkr24k * (GRAMS_PER_OUNCE / GRAMS_PER_TOLA),
+};
+
+const goldPrices22K = {
+  perTola: metalPrices.gold.pkr22k,
+  per10Gram: (metalPrices.gold.pkr22k / GRAMS_PER_TOLA) * 10,
+  perGram: metalPrices.gold.pkr22k / GRAMS_PER_TOLA,
+  perOunce: metalPrices.gold.pkr22k * (GRAMS_PER_OUNCE / GRAMS_PER_TOLA),
+};
   const silverPrices = calculatePrices(metalPrices.silver.usd);
 
   const formatPrice = (price) => {
@@ -151,8 +175,8 @@ const Home = () => {
                   <tr>
                     <td><i className="fas fa-weight"></i> 1 Ounce</td>
                     <td>31.10 grams</td>
-                    <td className="price-value">{formatPrice(metalPrices.gold.pkr)}</td>
-                    <td>{formatUSD(metalPrices.gold.usd)}</td>
+                    <td className="price-value">{formatPrice(goldPrices24K.perOunce)}</td>
+                    <td>{formatUSD(goldPrices24K.perOunce / USD_TO_PKR)}</td>
                   </tr>
                 </>
               )}
@@ -204,8 +228,8 @@ const Home = () => {
                   <tr>
                     <td><i className="fas fa-weight"></i> 1 Ounce</td>
                     <td>31.10 grams</td>
-                    <td className="price-value">{formatPrice(metalPrices.gold.pkr * (22/24))}</td>
-                    <td>{formatUSD(metalPrices.gold.usd * (22/24))}</td>
+                    <td className="price-value">{formatPrice(goldPrices22K.perOunce)}</td>
+                    <td>{formatUSD(goldPrices22K.perOunce / USD_TO_PKR)}</td>
                   </tr>
                 </>
               )}
