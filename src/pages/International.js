@@ -10,33 +10,44 @@ const International = () => {
   const GRAMS_PER_OUNCE = 31.1035;
   const GRAMS_PER_TOLA = 11.6638;
 
-  // 👆 Replace this with your actual endpoint (same as Pakistan page)
 
- const fetchMetalPrices = useCallback(async () => {
+const fetchMetalPrices = useCallback(async () => {
   setLoading(true);
   setError(null);
 
-  const API_URL = "https://api-zqweriy4ka-uc.a.run.app/api/gold-price/intl"; // your Firebase Function URL
+  const API_GOLD = "https://api-zqweriy4ka-uc.a.run.app/api/gold-price/intl";
+  const API_SILVER = "https://api-zqweriy4ka-uc.a.run.app/api/silver-price/intl";
 
   try {
-    const res = await fetch(API_URL);
-    if (!res.ok) throw new Error("Failed to fetch international gold price");
+    // ⚡ Fetch both APIs in parallel
+    const [goldRes, silverRes] = await Promise.allSettled([
+      fetch(API_GOLD),
+      fetch(API_SILVER),
+    ]);
 
-    const json = await res.json();
+    // ✅ Parse each response safely (only once)
+    const goldData =
+      goldRes.status === "fulfilled" && goldRes.value.ok
+        ? await goldRes.value.json()
+        : null;
 
-    // Extract data from backend response
-    const intlGoldPriceUSD = json?.data;
-    const timestamp = json?.timestamp || Date.now();
+    const silverData =
+      silverRes.status === "fulfilled" && silverRes.value.ok
+        ? await silverRes.value.json()
+        : null;
 
-    if (!intlGoldPriceUSD) throw new Error("Missing international gold price");
+    const intlGoldPriceUSD = goldData?.data || null;
+    const intlSilverPriceUSD = silverData?.data || null;
+    const timestamp = goldData?.timestamp || silverData?.timestamp || Date.now();
 
-    // Simulated silver price (you can replace with API later)
-    const silverPricePerOz = 31 + (Math.random() * 0.5 - 0.25);
+    if (!intlGoldPriceUSD && !intlSilverPriceUSD) {
+      throw new Error("Failed to fetch gold and silver prices");
+    }
 
-    // Update React state
+    // ✅ Update React state
     setMetalPrices({
-      gold: { usd: intlGoldPriceUSD },
-      silver: { usd: silverPricePerOz },
+      gold: { usd: intlGoldPriceUSD || 0 },
+      silver: { usd: intlSilverPriceUSD || 0 },
     });
 
     setLastUpdated(new Date(timestamp));
@@ -47,6 +58,8 @@ const International = () => {
     setLoading(false);
   }
 }, []);
+
+
 
 
   useEffect(() => {
@@ -72,7 +85,7 @@ const International = () => {
 
   const calculatePrices = (pricePerOz) => ({
     tola: (pricePerOz / GRAMS_PER_OUNCE) * GRAMS_PER_TOLA,
-    tenGrams: (pricePerOz / GRAMS_PER_OUNCE) * 10,
+    tenGrams: (pricePerOz / GRAMS_PER_OUNCE) * GRAMS_PER_TOLA * 85.735,
     gram: pricePerOz / GRAMS_PER_OUNCE,
     ounce: pricePerOz,
   });
@@ -184,7 +197,7 @@ const International = () => {
                 <tbody>
                   {Object.entries({
                     "1 Tola": calculatePrices(metalPrices.silver.usd).tola,
-                    "10 Grams": calculatePrices(metalPrices.silver.usd).tenGrams,
+                    "1 Kilo": calculatePrices(metalPrices.silver.usd).tenGrams,
                     "1 Gram": calculatePrices(metalPrices.silver.usd).gram,
                     "1 Ounce": calculatePrices(metalPrices.silver.usd).ounce,
                   }).map(([unit, price]) => (

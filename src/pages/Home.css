@@ -198,8 +198,8 @@
 
 .spinner {
   display: inline-block;
-  width: 20px;
-  height: 20px;
+  width: 10px;
+  height: 10px;
   border: 3px solid var(--spinner-border);
   border-top-color: var(--spinner-top);
   border-radius: 50%;
@@ -207,6 +207,23 @@
   margin-right: 10px;
   vertical-align: middle;
 }
+/* Small inline spinner for spot prices or buttons */
+.spinner-inline {
+  display: inline-block;
+  width: 14px;              /* Smaller size */
+  height: 14px;
+  border: 1.5px solid var(--spinner-border);
+  border-top-color: var(--spinner-top);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-left: 3px;
+  margin-right: 10px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+
+}
+
 
 .content-section {
   margin: 40px 0;

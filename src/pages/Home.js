@@ -9,7 +9,10 @@ const Home = () => {
     gold: { usd: 0, pkr: 0 },
     silver: { usd: 0, pkr: 0 }
   });
-  const [loading, setLoading] = useState(true);
+  const [loadingGoldPK, setLoadingGoldPK] = useState(true);
+const [loadingGoldIntl, setLoadingGoldIntl] = useState(true);
+const [loadingSilverIntl, setLoadingSilverIntl] = useState(true);
+
   const [lastUpdated, setLastUpdated] = useState(null);
   const [error, setError] = useState(null);
 
@@ -18,59 +21,82 @@ const Home = () => {
   const GRAMS_PER_OUNCE = 31.1035;
 
 const fetchMetalPrices = async () => {
-  setLoading(true);
   setError(null);
 
   const apiURL = "https://api-zqweriy4ka-uc.a.run.app";
 
+  // Reset
+  setMetalPrices({
+    gold: { usd: 0, pkr24k: 0, pkr22k: 0 },
+    silver: { usd: 0, pkr: 0 },
+  });
+
+  // Start spinners
+  setLoadingGoldPK(true);
+  setLoadingGoldIntl(true);
+  setLoadingSilverIntl(true);
+
   try {
-    const [pkRes, intlRes] = await Promise.allSettled([
-      axios.get(`${apiURL}/api/gold-price/pk`),
-      axios.get(`${apiURL}/api/gold-price/intl`),
-    ]);
+    // 🔹 Gold (Pakistan)
+    axios
+      .get(`${apiURL}/api/gold-price/pk`)
+      .then((res) => {
+        if (res.data.success) {
+          setMetalPrices((prev) => ({
+            ...prev,
+            gold: {
+              ...prev.gold,
+              pkr24k: res.data.data.rate24k,
+              pkr22k: res.data.data.rate22k,
+            },
+          }));
+        }
+      })
+      .catch((err) => console.error("❌ PK Gold fetch failed", err))
+      .finally(() => setLoadingGoldPK(false));
 
-    const pk =
-      pkRes.status === "fulfilled" && pkRes.value.data.success
-        ? pkRes.value.data.data
-        : null;
-    const intl =
-      intlRes.status === "fulfilled" && intlRes.value.data.success
-        ? intlRes.value.data.data
-        : null;
+    // 🔹 Gold (International)
+    axios
+      .get(`${apiURL}/api/gold-price/intl`)
+      .then((res) => {
+        if (res.data.success) {
+          setMetalPrices((prev) => ({
+            ...prev,
+            gold: { ...prev.gold, usd: res.data.data },
+          }));
+        }
+      })
+      .catch((err) => console.error("❌ Intl Gold fetch failed", err))
+      .finally(() => setLoadingGoldIntl(false));
 
-    if (!pk && !intl) throw new Error("Failed to fetch prices");
-
-    setMetalPrices({
-      gold: {
-        usd: intl || 0,
-        pkr24k: pk?.rate24k || 0,
-        pkr22k: pk?.rate22k || 0,
-      },
-      silver: { usd: 0, pkr: 0 },
-    });
-
-    setLastUpdated(new Date());
+    // 🔹 Silver (International)
+    axios
+      .get(`${apiURL}/api/silver-price/intl`)
+      .then((res) => {
+        if (res.data.success) {
+          setMetalPrices((prev) => ({
+            ...prev,
+            silver: { ...prev.silver, usd: res.data.data },
+          }));
+        }
+      })
+      .catch((err) => console.error("❌ Intl Silver fetch failed", err))
+      .finally(() => setLoadingSilverIntl(false));
   } catch (err) {
-    console.error("Error fetching metal prices:", err);
+    console.error("❌ Error fetching metal prices:", err);
     setError("Unable to fetch live prices. Please try again later.");
   } finally {
-    setLoading(false);
+    setLastUpdated(new Date());
   }
 };
+
+
   useEffect(() => {
     fetchMetalPrices();
     const interval = setInterval(fetchMetalPrices, 300000);
     return () => clearInterval(interval);
   }, []);
 
-  const calculatePrices = (perOuncePriceUSD, purity = 1.0) => {
-    const perGramPKR = (perOuncePriceUSD * USD_TO_PKR * purity) / GRAMS_PER_OUNCE;
-    return {
-      perGram: perGramPKR,
-      per10Gram: perGramPKR * 10,
-      perTola: perGramPKR * GRAMS_PER_TOLA
-    };
-  };
 
 const goldPrices24K = {
   perTola: metalPrices.gold.pkr24k,
@@ -85,7 +111,7 @@ const goldPrices22K = {
   perGram: metalPrices.gold.pkr22k / GRAMS_PER_TOLA,
   perOunce: metalPrices.gold.pkr22k * (GRAMS_PER_OUNCE / GRAMS_PER_TOLA),
 };
-  const silverPrices = calculatePrices(metalPrices.silver.usd);
+  const silverPrices = metalPrices.silver.usd
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-PK', {
@@ -118,9 +144,20 @@ const goldPrices22K = {
               <i className="fas fa-clock"></i> Last updated: {lastUpdated.toLocaleTimeString('en-US')}
             </span>
           )}
-          <button className="refresh-btn" onClick={fetchMetalPrices} disabled={loading}>
-            <i className={`fas fa-sync-alt ${loading ? 'spinning' : ''}`}></i> Refresh
-          </button>
+       <button
+  className="refresh-btn"
+  onClick={fetchMetalPrices}
+  disabled={loadingGoldPK || loadingGoldIntl || loadingSilverIntl}
+>
+  <i
+    className={`fas fa-sync-alt ${
+      loadingGoldPK || loadingGoldIntl || loadingSilverIntl ? 'spinning' : ''
+    }`}
+  ></i>{" "}
+  Refresh
+</button>
+
+
         </div>
       </div>
 
@@ -131,10 +168,19 @@ const goldPrices22K = {
       )}
 
       <div className="prices-section">
-        <div className="section-header">
-          <h2><i className="fas fa-gem"></i> Gold Prices (24K)</h2>
-          <span className="spot-price">Spot: {formatUSD(metalPrices.gold.usd)}/oz</span>
-        </div>
+     <div className="section-header">
+  <h2><i className="fas fa-gem"></i> Gold Prices (24K)</h2>
+  {loadingGoldIntl ? (
+    <span className="spot-price">
+      <div className="spinner-inline"></div>fetching live rate...
+    </span>
+  ) : (
+    <span className="spot-price">
+      Spot: {formatUSD(metalPrices.gold.usd)}/oz
+    </span>
+  )}
+</div>
+        
         <div className="table-container">
           <table className="price-table">
             <thead>
@@ -146,7 +192,7 @@ const goldPrices22K = {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {loadingGoldPK ? (
                 <tr>
                   <td colSpan="4" className="loading-cell">
                     <div className="spinner"></div> Loading...
@@ -199,7 +245,7 @@ const goldPrices22K = {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {loadingGoldPK ? (
                 <tr>
                   <td colSpan="4" className="loading-cell">
                     <div className="spinner"></div> Loading...
@@ -238,9 +284,21 @@ const goldPrices22K = {
         </div>
 
         <div className="section-header mt-40">
-          <h2><i className="fas fa-circle"></i> Silver Prices</h2>
-          <span className="spot-price">Spot: {formatUSD(metalPrices.silver.usd)}/oz</span>
-        </div>
+  <h2>
+    <i className="fas fa-circle"></i> Silver Prices
+  </h2>
+
+  {loadingSilverIntl ? (
+    <span className="spot-price">
+      <div className="spinner-inline"></div>fetching live rate...
+    </span>
+  ) : (
+    <span className="spot-price">
+      Spot: {formatUSD(metalPrices.silver.usd)}/oz
+    </span>
+  )}
+</div>
+
         <div className="table-container">
           <table className="price-table">
             <thead>
@@ -252,7 +310,7 @@ const goldPrices22K = {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {loadingSilverIntl ? (
                 <tr>
                   <td colSpan="4" className="loading-cell">
                     <div className="spinner"></div> Loading...
@@ -263,26 +321,26 @@ const goldPrices22K = {
                   <tr>
                     <td><i className="fas fa-weight"></i> 1 Tola</td>
                     <td>11.66 grams</td>
-                    <td className="price-value">{formatPrice(silverPrices.perTola)}</td>
-                    <td>{formatUSD(silverPrices.perTola / USD_TO_PKR)}</td>
+                    <td className="price-value">Rates are not stable in Pakistan</td>
+                    <td>Rates are not stable in Pakistan</td>
                   </tr>
                   <tr>
                     <td><i className="fas fa-weight"></i> 10 Grams</td>
                     <td>10 grams</td>
-                    <td className="price-value">{formatPrice(silverPrices.per10Gram)}</td>
-                    <td>{formatUSD(silverPrices.per10Gram / USD_TO_PKR)}</td>
+                    <td className="price-value">Rates are not stable in Pakistan</td>
+                    <td>Rates are not stable in Pakistan</td>
                   </tr>
                   <tr>
                     <td><i className="fas fa-weight"></i> 1 Gram</td>
                     <td>1 gram</td>
-                    <td className="price-value">{formatPrice(silverPrices.perGram)}</td>
-                    <td>{formatUSD(silverPrices.perGram / USD_TO_PKR)}</td>
+                    <td className="price-value">Rates are not stable in Pakistan</td>
+                    <td>Rates are not stable in Pakistan</td>
                   </tr>
                   <tr>
                     <td><i className="fas fa-weight"></i> 1 Ounce</td>
                     <td>31.10 grams</td>
-                    <td className="price-value">{formatPrice(metalPrices.silver.pkr)}</td>
-                    <td>{formatUSD(metalPrices.silver.usd)}</td>
+                    <td className="price-value">Rates are not stable in Pakistan</td>
+                    <td>Rates are not stable in Pakistan</td>
                   </tr>
                 </>
               )}
