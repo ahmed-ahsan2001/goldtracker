@@ -16,6 +16,13 @@ const [loadingSilverIntl, setLoadingSilverIntl] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [error, setError] = useState(null);
 
+  // Gold Calculator State
+  const [calculatorInput, setCalculatorInput] = useState({
+    weight: '',
+    unit: 'gram',
+    purity: '24K'
+  });
+
   const USD_TO_PKR = 278;
   const GRAMS_PER_TOLA = 11.6638;
   const GRAMS_PER_OUNCE = 31.1035;
@@ -129,6 +136,61 @@ const goldPrices22K = {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(price);
+  };
+
+  // Gold Calculator Functions
+  const calculateGoldValue = () => {
+    const weight = parseFloat(calculatorInput.weight);
+    if (!weight || weight <= 0) return null;
+
+    let weightInGrams = 0;
+    
+    // Convert to grams based on unit
+    switch (calculatorInput.unit) {
+      case 'gram':
+        weightInGrams = weight;
+        break;
+      case 'tola':
+        weightInGrams = weight * GRAMS_PER_TOLA;
+        break;
+      case 'ounce':
+        weightInGrams = weight * GRAMS_PER_OUNCE;
+        break;
+      default:
+        weightInGrams = weight;
+    }
+
+    // Get price per gram based on purity
+    let pricePerGramPKR = 0;
+    if (calculatorInput.purity === '24K' && metalPrices.gold.pkr24k) {
+      pricePerGramPKR = metalPrices.gold.pkr24k / GRAMS_PER_TOLA;
+    } else if (calculatorInput.purity === '22K' && metalPrices.gold.pkr22k) {
+      pricePerGramPKR = metalPrices.gold.pkr22k / GRAMS_PER_TOLA;
+    } else if (calculatorInput.purity === '18K' && metalPrices.gold.pkr24k) {
+      // 18K is 75% pure, so 75% of 24K price
+      pricePerGramPKR = (metalPrices.gold.pkr24k / GRAMS_PER_TOLA) * 0.75;
+    }
+
+    if (pricePerGramPKR === 0) return null;
+
+    const totalValuePKR = weightInGrams * pricePerGramPKR;
+    const totalValueUSD = totalValuePKR / USD_TO_PKR;
+
+    return {
+      pkr: totalValuePKR,
+      usd: totalValueUSD,
+      weightInGrams: weightInGrams
+    };
+  };
+
+  const calculatorResult = calculateGoldValue();
+
+  const handleCalculatorChange = (e) => {
+    const { name, value } = e.target;
+    setCalculatorInput(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   return (
@@ -349,6 +411,110 @@ const goldPrices22K = {
         </div>
       </div>
 
+      {/* Gold Calculator Section */}
+      <div className="calculator-section">
+        <div className="section-header">
+          <h2><i className="fas fa-calculator"></i> Gold Value Calculator</h2>
+          <span className="spot-price">Calculate your gold's worth</span>
+        </div>
+        
+        <div className="calculator-container">
+          <div className="calculator-form">
+            <div className="calculator-input-group">
+              <label htmlFor="weight">
+                <i className="fas fa-weight"></i> Weight
+              </label>
+              <input
+                type="number"
+                id="weight"
+                name="weight"
+                value={calculatorInput.weight}
+                onChange={handleCalculatorChange}
+                placeholder="Enter weight"
+                min="0"
+                step="0.01"
+                className="calculator-input"
+              />
+            </div>
+
+            <div className="calculator-input-group">
+              <label htmlFor="unit">
+                <i className="fas fa-ruler"></i> Unit
+              </label>
+              <select
+                id="unit"
+                name="unit"
+                value={calculatorInput.unit}
+                onChange={handleCalculatorChange}
+                className="calculator-select"
+              >
+                <option value="gram">Gram</option>
+                <option value="tola">Tola</option>
+                <option value="ounce">Ounce</option>
+              </select>
+            </div>
+
+            <div className="calculator-input-group">
+              <label htmlFor="purity">
+                <i className="fas fa-gem"></i> Purity
+              </label>
+              <select
+                id="purity"
+                name="purity"
+                value={calculatorInput.purity}
+                onChange={handleCalculatorChange}
+                className="calculator-select"
+              >
+                <option value="24K">24 Karat (99.9% Pure)</option>
+                <option value="22K">22 Karat (91.6% Pure)</option>
+                <option value="18K">18 Karat (75% Pure)</option>
+              </select>
+            </div>
+          </div>
+
+          {calculatorResult && (
+            <div className="calculator-result">
+              <div className="result-header">
+                <i className="fas fa-coins"></i>
+                <h3>Calculated Value</h3>
+              </div>
+              <div className="result-values">
+                <div className="result-item">
+                  <span className="result-label">Value in PKR:</span>
+                  <span className="result-value pkr">{formatPrice(calculatorResult.pkr)}</span>
+                </div>
+                <div className="result-item">
+                  <span className="result-label">Value in USD:</span>
+                  <span className="result-value usd">{formatUSD(calculatorResult.usd)}</span>
+                </div>
+                <div className="result-item">
+                  <span className="result-label">Weight:</span>
+                  <span className="result-value">{calculatorResult.weightInGrams.toFixed(2)} grams</span>
+                </div>
+              </div>
+              <div className="result-note">
+                <i className="fas fa-info-circle"></i>
+                <p>Based on current market rates. Actual prices may vary based on dealer premiums and making charges.</p>
+              </div>
+            </div>
+          )}
+
+          {!calculatorResult && calculatorInput.weight && (
+            <div className="calculator-message">
+              <i className="fas fa-exclamation-circle"></i>
+              <p>Please enter a valid weight to calculate the value.</p>
+            </div>
+          )}
+
+          {!calculatorResult && !calculatorInput.weight && (
+            <div className="calculator-placeholder">
+              <i className="fas fa-calculator"></i>
+              <p>Enter the weight and select purity to calculate your gold's value</p>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="content-section">
         <div className="info-grid">
           <div className="info-card">
@@ -417,16 +583,67 @@ const goldPrices22K = {
               factors helps in making better investment decisions.
             </p>
           </div>
+
+          <div className="info-card">
+            <h3><i className="fas fa-dollar-sign"></i> Understanding Price Fluctuations</h3>
+            <p>
+              Precious metals prices change throughout the day based on international market trading. 
+              Factors such as economic data releases, central bank announcements, currency movements, 
+              and global events can cause significant price swings. It's important to monitor these 
+              trends regularly if you're planning to buy or sell gold and silver.
+            </p>
+          </div>
+
+          <div className="info-card">
+            <h3><i className="fas fa-city"></i> Local vs International Prices</h3>
+            <p>
+              While international spot prices provide a baseline, local prices in Pakistan may differ 
+              due to import duties, local taxes, dealer margins, and making charges. The prices shown 
+              here reflect the base metal value. When purchasing jewelry or coins, additional charges 
+              for craftsmanship, certification, and dealer services will apply.
+            </p>
+          </div>
+
+          <div className="info-card">
+            <h3><i className="fas fa-history"></i> Historical Price Trends</h3>
+            <p>
+              Gold and silver have been valued for thousands of years and have maintained their worth 
+              through economic crises, wars, and currency devaluations. Historically, gold has served 
+              as a hedge against inflation and currency devaluation, while silver has both investment 
+              and industrial value, making it sensitive to economic growth cycles.
+            </p>
+          </div>
+
+          <div className="info-card">
+            <h3><i className="fas fa-certificate"></i> Buying Gold and Silver Safely</h3>
+            <p>
+              When purchasing precious metals, always buy from licensed and reputable dealers. Look for 
+              proper certification, hallmarks indicating purity, and transparent pricing. Avoid deals 
+              that seem too good to be true, and always get a receipt with detailed information about 
+              the purchase, including weight, purity, and price per unit.
+            </p>
+          </div>
+
+          <div className="info-card">
+            <h3><i className="fas fa-chart-bar"></i> Investment Strategies</h3>
+            <p>
+              Precious metals can be part of a diversified investment portfolio. Consider your investment 
+              goals, time horizon, and risk tolerance. Physical gold and silver provide tangible assets, 
+              while ETFs and mutual funds offer easier trading. Research different options and consult 
+              with financial advisors to determine the best approach for your situation.
+            </p>
+          </div>
         </div>
       </div>
 
       <div className="disclaimer">
         <i className="fas fa-info-circle"></i>
         <p>
-          <strong>Disclaimer:</strong> Prices shown are simulated based on recent market trends and are for informational and demonstration purposes only. 
-          For live pricing, integrate with a premium API service like GoldAPI or MetalPriceAPI. 
-          Always verify current prices with authorized dealers before making any transactions. We are not responsible for any 
-          financial decisions made based on this information.
+          <strong>Disclaimer:</strong> Prices shown are based on current market data and are updated regularly for informational purposes. 
+          While we strive to provide accurate pricing information, prices may vary based on local market conditions, dealer premiums, 
+          making charges, and other factors. Always verify current prices with authorized dealers before making any transactions. 
+          We are not responsible for any financial decisions made based on this information. This information should not be considered 
+          as financial, investment, or trading advice.
         </p>
       </div>
 
@@ -438,10 +655,15 @@ const goldPrices22K = {
           </div>
           <div className="footer-section">
             <h4>Quick Links</h4>
-            <a href="#gold">Gold Prices</a>
-            <a href="#silver">Silver Prices</a>
-            <a href="#about">About</a>
-            <a href="#contact">Contact</a>
+            <a href="/">Home</a>
+            <a href="/international">International Prices</a>
+            <a href="/about">About</a>
+            <a href="/contact">Contact</a>
+          </div>
+          <div className="footer-section">
+            <h4>Legal</h4>
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
           </div>
           <div className="footer-section">
             <h4>Contact</h4>

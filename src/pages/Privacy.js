@@ -262,10 +262,15 @@ const Privacy = () => {
           </div>
           <div className="footer-section">
             <h4>Quick Links</h4>
-            <a href="#gold">Gold Prices</a>
-            <a href="#silver">Silver Prices</a>
-            <a href="#about">About</a>
-            <a href="#contact">Contact</a>
+            <a href="/">Home</a>
+            <a href="/international">International Prices</a>
+            <a href="/about">About</a>
+            <a href="/contact">Contact</a>
+          </div>
+          <div className="footer-section">
+            <h4>Legal</h4>
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
           </div>
           <div className="footer-section">
             <h4>Contact</h4>

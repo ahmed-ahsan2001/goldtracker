@@ -45,6 +45,12 @@ const Navigation = () => {
           >
             <i className="fas fa-shield-alt"></i> Privacy
           </Link>
+          <Link 
+            to="/terms" 
+            className={`nav-link ${location.pathname === '/terms' ? 'active' : ''}`}
+          >
+            <i className="fas fa-file-contract"></i> Terms
+          </Link>
           <button 
             className="theme-toggle" 
             onClick={toggleTheme}
